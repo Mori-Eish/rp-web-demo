@@ -6,11 +6,11 @@ let active = null, opener = null;
 
 function thumbnail(kind, index) {
   const el = document.createElement('div');
-  el.className = `thumbnail ${kind === 'wind' ? 'thumb-wind' : kind === 'rp' ? 'thumb-rp' : kind === 'input' ? 'thumb-input' : 'thumb-placeholder' + (index % 2 === 0 ? ' soft' : '')}`;
+  el.className = `thumbnail ${kind === 'bar' ? 'thumb-bar' : kind === 'wind' ? 'thumb-wind' : kind === 'rp' ? 'thumb-rp' : kind === 'input' ? 'thumb-input' : 'thumb-placeholder' + (index % 2 === 0 ? ' soft' : '')}`;
   el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = kind === 'wind' ? '<span class="wind-thumb-zone zone-down">✣<span>↓</span></span><span class="wind-thumb-zone zone-up"><span>↑</span>✣</span><span class="wind-thumb-cursor"></span>' : kind === 'rp' ? '<span class="rp-thumb-field"><span></span></span><span class="rp-thumb-arrow">↑</span>' : kind === 'input' ? '<span class="thumb-square"></span><span class="thumb-pointer"></span>' : '<span class="placeholder-shape">+</span>';
+  el.innerHTML = kind === 'bar' ? '<span class="bar-thumb"></span><span class="bar-thumb-pointer"></span>' : kind === 'wind' ? '<span class="wind-thumb-zone zone-down">✣<span>↓</span></span><span class="wind-thumb-zone zone-up"><span>↑</span>✣</span><span class="wind-thumb-cursor"></span>' : kind === 'rp' ? '<span class="rp-thumb-field"><span></span></span><span class="rp-thumb-arrow">↑</span>' : kind === 'input' ? '<span class="thumb-square"></span><span class="thumb-pointer"></span>' : '<span class="placeholder-shape">+</span>';
   const number = document.createElement('span'); number.className = 'thumb-index'; number.textContent = String(index + 1).padStart(2, '0');
-  const tag = document.createElement('span'); tag.className = 'thumb-tag'; tag.textContent = kind === 'wind' ? 'MOVE THROUGH THE WIND' : kind === 'rp' ? 'CHOOSE A DIRECTION' : kind === 'input' ? 'DRAG & EXPLORE' : 'OPEN FOR EXPLORATION';
+  const tag = document.createElement('span'); tag.className = 'thumb-tag'; tag.textContent = kind === 'bar' ? 'EXPLORE AN APPARENT BEND' : kind === 'wind' ? 'MOVE THROUGH THE WIND' : kind === 'rp' ? 'CHOOSE A DIRECTION' : kind === 'input' ? 'DRAG & EXPLORE' : 'OPEN FOR EXPLORATION';
   el.append(number, tag); return el;
 }
 function card(demo, index) {
@@ -121,6 +121,7 @@ function openDemo(id, trigger) {
   $('player-badge').textContent = demo.badge || 'デモ'; $('stage-label').textContent = demo.stageLabel || demo.kind;
   stage.classList.toggle('rp-stage', demo.id === 'perpetual-square');
   stage.classList.toggle('wind-stage', demo.stageClass === 'wind-stage');
+  stage.classList.toggle('bar-stage', demo.stageClass === 'bar-stage');
   $('settings-heading').hidden = demo.settings.length === 0;
   $('demo-overlay').replaceChildren();
   canvas.setAttribute('aria-label', demo.canvasLabel || `${demo.title}の操作領域。操作方法は説明を参照。`);
