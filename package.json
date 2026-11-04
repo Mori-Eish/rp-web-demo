@@ -1,0 +1,16 @@
+{
+  "name": "rp-web-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reversed Phi (RP) を用いた Pseudo-Haptics (PH) のブラウザデモ",
+  "type": "module",
+  "scripts": {
+    "start": "node serve.mjs",
+    "test": "node --test",
+    "predeploy": "npm test",
+    "deploy": "git subtree push --prefix dist origin gh-pages"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
