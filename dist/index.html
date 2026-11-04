@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Reversed Phi (RP) を用いた Pseudo-Haptics (PH) のWebデモ。体験コンテンツを追加するための準備版です。">
+  <meta name="description" content="Reversed Phi (RP) を用いた Pseudo-Haptics (PH) のブラウザデモと入力確認サンプル。">
   <meta name="theme-color" content="#f6f5f0">
-  <title>RP / PH — Demo collection</title>
+  <title>RP / PH Webデモ</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
   <script type="module" src="./app.js"></script>
@@ -13,49 +13,24 @@
 <body>
   <a class="skip-link" href="#collection">デモ一覧へスキップ</a>
   <header class="site-header wrap">
-    <a class="wordmark" href="./" aria-label="RP / PH ホーム">rp<span>/</span>ph<span class="wordmark-dot">●</span></a>
-    <span class="header-caption">VISUAL HAPTICS EXPLORATIONS</span>
-    <a class="nav-link" href="#about">このプロジェクトについて <span aria-hidden="true">↗</span></a>
+    <a class="site-title" href="./" aria-label="RP / PH Webデモ ホーム">RP / PH Webデモ</a>
   </header>
 
   <main class="wrap">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="eyebrow"><span class="status-dot"></span> DEMO COLLECTION <span class="version">/ PREPARATION v0.1</span></p>
-        <h1 id="hero-title">見え方から、<br>手触りを考える。</h1>
-        <p class="hero-description">Reversed Phi <span class="muted">×</span> Pseudo-Haptics<br>視覚が生み出す運動知覚を、操作の感覚へ。</p>
-        <a class="text-link" href="#collection">デモを見る <span aria-hidden="true">↓</span></a>
-      </div>
-      <div class="hero-art" role="img" aria-label="固定した四角形と輪郭を使った静止イメージ。RP刺激ではありません。">
-        <span class="art-label">A STUDY OF PERCEPTION</span>
-        <div class="art-grid"></div><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
-        <div class="art-shadow"></div><div class="art-square"></div>
-        <span class="art-coordinate">x 0.50<br>y 0.50</span>
-        <span class="art-caption">視覚と操作、そのあいだ。<span>CONCEPT IMAGE / STATIC</span></span>
-      </div>
-    </section>
-
     <section id="collection" class="collection" aria-labelledby="collection-title">
-      <div class="section-head"><div><p class="eyebrow">EXPLORE</p><h2 id="collection-title">Demo collection<span class="section-count">01</span></h2></div><p class="section-note">体験を、ここから少しずつ。<br>しなって見える棒のデモを追加しました。</p></div>
+      <div class="section-head"><h1 id="collection-title">デモ一覧<span class="section-count">4件</span></h1></div>
       <div class="demo-grid" id="demo-grid"></div>
-      <p class="collection-footnote"><span aria-hidden="true">↳</span> RPの方向を切り替える錯視デモ、ファンの風、しなって見える棒、入力確認サンプルを試せます。</p>
-    </section>
-
-    <section id="about" class="about" aria-labelledby="about-title">
-      <div><p class="eyebrow">BEHIND THE DEMOS</p><h2 id="about-title">視覚を手がかりに、<br>操作の感覚を探る。</h2></div>
-      <div class="about-copy"><p>Reversed Phi (RP) は、輝度変化から方向性を持つ運動知覚を生じさせる錯視です。この研究では、RPを操作対象の触覚プロパティに応用する Pseudo-Haptics (PH) を検討しています。</p><p>まずは、固定した四角形の見かけの進行方向を切り替えるシンプルなデモから。今後、操作と組み合わせた体験コンテンツを追加していきます。</p><div class="about-meta"><span>STATUS</span><span>錯視デモを追加 · 体験コンテンツを追加予定</span></div></div>
     </section>
   </main>
-  <footer class="site-footer wrap"><span>RP / PH <span class="muted">— Browser demo project</span></span><span>Prototype · 2026</span></footer>
 
   <dialog id="player" aria-labelledby="player-title">
     <div class="player-shell">
-      <header class="player-header"><div><span class="eyebrow">DEMO / <span id="player-number">01</span></span><h2 id="player-title"></h2></div><button class="icon-button" id="close-player" aria-label="デモを閉じる">✕</button></header>
+      <header class="player-header"><div><span class="eyebrow">デモ / <span id="player-number">01</span></span><h2 id="player-title"></h2></div><button class="icon-button" id="close-player" aria-label="デモを閉じる">✕</button></header>
       <div class="player-body">
         <div class="stage-column"><div id="stage" class="stage"><div class="stage-topline"><span id="stage-status" role="status">待機中</span><span id="stage-label"></span></div><canvas id="demo-canvas" tabindex="0" aria-label="デモの操作領域"></canvas><div id="demo-overlay" class="demo-overlay"></div><div class="stage-help" id="stage-help"></div><div class="fullscreen-controls"><button class="button button-quiet" id="fullscreen-pause">一時停止</button><button class="button button-quiet" id="fullscreen-exit">全画面を終了</button></div></div>
           <div class="transport"><button class="button button-dark" id="toggle-play">開始する <span aria-hidden="true">↗</span></button><button class="button button-quiet" id="reset-demo">リセット</button><button class="button button-quiet fullscreen-button" id="fullscreen">全画面 <span aria-hidden="true">⛶</span></button></div>
         </div>
-        <aside class="controls" aria-label="デモの説明と設定"><span class="pill" id="player-badge"></span><p id="player-description"></p><div class="control-divider"></div><p class="eyebrow" id="settings-heading">SETTINGS</p><div id="settings"></div><div class="player-note"><strong>このデモについて</strong><p id="player-note"></p></div><p id="player-message" class="player-message" role="status" aria-live="polite"></p></aside>
+        <aside class="controls" aria-label="デモの説明と設定"><span class="pill" id="player-badge"></span><p id="player-description"></p><div class="control-divider"></div><p class="eyebrow" id="settings-heading">設定</p><div id="settings"></div><div class="player-note"><strong>このデモについて</strong><p id="player-note"></p></div><p id="player-message" class="player-message" role="status" aria-live="polite"></p></aside>
       </div>
       <footer class="player-footer"><span>マウス・タッチ・キーボード対応</span><span>Esc で閉じる</span></footer>
     </div>
