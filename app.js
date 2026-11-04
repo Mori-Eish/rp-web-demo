@@ -9,9 +9,7 @@ function thumbnail(kind, index) {
   el.className = `thumbnail ${kind === 'bar' ? 'thumb-bar' : kind === 'wind' ? 'thumb-wind' : kind === 'rp' ? 'thumb-rp' : kind === 'input' ? 'thumb-input' : 'thumb-placeholder' + (index % 2 === 0 ? ' soft' : '')}`;
   el.setAttribute('aria-hidden', 'true');
   el.innerHTML = kind === 'bar' ? '<span class="bar-thumb"></span><span class="bar-thumb-pointer"></span>' : kind === 'wind' ? '<span class="wind-thumb-zone zone-down">✣<span>↓</span></span><span class="wind-thumb-zone zone-up"><span>↑</span>✣</span><span class="wind-thumb-cursor"></span>' : kind === 'rp' ? '<span class="rp-thumb-field"><span></span></span><span class="rp-thumb-arrow">↑</span>' : kind === 'input' ? '<span class="thumb-square"></span><span class="thumb-pointer"></span>' : '<span class="placeholder-shape">+</span>';
-  const number = document.createElement('span'); number.className = 'thumb-index'; number.textContent = String(index + 1).padStart(2, '0');
-  const tag = document.createElement('span'); tag.className = 'thumb-tag'; tag.textContent = kind === 'bar' ? 'EXPLORE AN APPARENT BEND' : kind === 'wind' ? 'MOVE THROUGH THE WIND' : kind === 'rp' ? 'CHOOSE A DIRECTION' : kind === 'input' ? 'DRAG & EXPLORE' : 'OPEN FOR EXPLORATION';
-  el.append(number, tag); return el;
+  return el;
 }
 function card(demo, index) {
   const el = document.createElement(demo ? 'button' : 'article');
@@ -20,21 +18,20 @@ function card(demo, index) {
   el.append(thumbnail(demo?.thumbnail || 'placeholder', index));
   const body = document.createElement('div'); body.className = 'card-body';
   const meta = document.createElement('div'); meta.className = 'card-meta';
-  const kind = document.createElement('span'); kind.className = 'card-kind'; kind.textContent = demo?.kind || 'NEXT EXPLORATION';
   const status = document.createElement('span'); status.className = 'pill' + (demo ? '' : ' muted-pill'); status.textContent = demo ? demo.badge || 'デモ' : '準備中';
-  meta.append(kind, status);
-  const title = document.createElement('h3'); title.textContent = demo?.title || '次の体験のために';
+  meta.append(status);
+  const title = document.createElement('h2'); title.textContent = demo?.title || '次の体験のために';
   const description = document.createElement('p'); description.textContent = demo?.description || 'コンテンツが決まり次第、ここに新しいデモを追加します。';
   body.append(meta, title, description); el.append(body);
   const bottom = document.createElement('div'); bottom.className = 'card-bottom';
-  const label = document.createElement('span'); label.textContent = demo ? 'デモを開く' : '内容・公開時期は未定';
+  const label = document.createElement('span'); label.textContent = demo ? '開く' : '内容・公開時期は未定';
   bottom.append(label);
   if (demo) { const arrow = document.createElement('span'); arrow.className = 'card-action'; arrow.textContent = '↗'; arrow.setAttribute('aria-hidden', 'true'); bottom.append(arrow); }
   el.append(bottom); return el;
 }
 demos.forEach((demo, i) => $('demo-grid').append(card(demo, i)));
 for (let i = 0; i < plannedSlots; i++) $('demo-grid').append(card(null, demos.length + i));
-document.querySelector('.section-count').textContent = String(demos.length).padStart(2, '0');
+document.querySelector('.section-count').textContent = `${demos.length}件`;
 
 function render() {
   if (active) active.instance.render({ elapsed: active.elapsed, delta: 0 });
