@@ -1,8 +1,11 @@
 import { demos, plannedSlots } from './demos/registry.js';
+import { t, getLanguage, setLanguage, localizeDemo } from './i18n.js';
+
+try { setLanguage(localStorage.getItem('rp-demo-language')); } catch { /* 保存不可でも切替可能。 */ }
 
 const $ = (id) => document.getElementById(id);
 const player = $('player'), canvas = $('demo-canvas'), stage = $('stage');
-let active = null, opener = null;
+let active = null, opener = null, messageKey = null, failed = false;
 
 function thumbnail(kind, index) {
   const el = document.createElement('div');
@@ -12,26 +15,69 @@ function thumbnail(kind, index) {
   return el;
 }
 function card(demo, index) {
+  demo = demo ? localizeDemo(demo) : null;
   const el = document.createElement(demo ? 'button' : 'article');
   el.className = `demo-card ${demo ? 'live' : 'placeholder-card'}`;
-  if (demo) { el.type = 'button'; el.setAttribute('aria-label', `${demo.title}を開く`); el.addEventListener('click', () => openDemo(demo.id, el)); }
+  if (demo) { el.id = `card-${demo.id}`; el.type = 'button'; el.setAttribute('aria-label', t('collection.openDemo', { title: demo.title })); el.addEventListener('click', () => openDemo(demo.id, el)); }
   el.append(thumbnail(demo?.thumbnail || 'placeholder', index));
   const body = document.createElement('div'); body.className = 'card-body';
   const meta = document.createElement('div'); meta.className = 'card-meta';
-  const status = document.createElement('span'); status.className = 'pill' + (demo ? '' : ' muted-pill'); status.textContent = demo ? demo.badge || 'デモ' : '準備中';
+  const status = document.createElement('span'); status.className = 'pill' + (demo ? '' : ' muted-pill'); status.textContent = demo ? demo.badge || t('player.demo') : t('collection.upcoming');
   meta.append(status);
-  const title = document.createElement('h2'); title.textContent = demo?.title || '次の体験のために';
-  const description = document.createElement('p'); description.textContent = demo?.description || 'コンテンツが決まり次第、ここに新しいデモを追加します。';
+  const title = document.createElement('h2'); title.textContent = demo?.title || t('collection.next');
+  const description = document.createElement('p'); description.textContent = demo?.description || t('collection.placeholder');
   body.append(meta, title, description); el.append(body);
   const bottom = document.createElement('div'); bottom.className = 'card-bottom';
-  const label = document.createElement('span'); label.textContent = demo ? '開く' : '内容・公開時期は未定';
+  const label = document.createElement('span'); label.textContent = demo ? t('collection.open') : t('collection.tbd');
   bottom.append(label);
   if (demo) { const arrow = document.createElement('span'); arrow.className = 'card-action'; arrow.textContent = '↗'; arrow.setAttribute('aria-hidden', 'true'); bottom.append(arrow); }
   el.append(bottom); return el;
 }
-demos.forEach((demo, i) => $('demo-grid').append(card(demo, i)));
-for (let i = 0; i < plannedSlots; i++) $('demo-grid').append(card(null, demos.length + i));
-document.querySelector('.section-count').textContent = `${demos.length}件`;
+function refreshGallery() {
+  $('demo-grid').replaceChildren();
+  demos.forEach((demo, i) => $('demo-grid').append(card(demo, i)));
+  for (let i = 0; i < plannedSlots; i++) $('demo-grid').append(card(null, demos.length + i));
+  document.querySelector('.section-count').textContent = t('collection.count', { count: demos.length });
+}
+function applyDemoText(demo) {
+  const copy = localizeDemo(demo);
+  $('player-title').textContent = copy.title;
+  $('player-description').textContent = copy.description; $('player-note').textContent = copy.note;
+  $('player-badge').textContent = copy.badge || t('player.demo');
+  canvas.setAttribute('aria-label', copy.canvasLabel || t('player.canvas', { title: copy.title }));
+}
+function updateTransport() {
+  if (!active) return;
+  const demo = localizeDemo(active.demo), running = active.running;
+  $('toggle-play').textContent = t(running ? 'player.pause' : active.started ? 'player.resume' : 'player.start');
+  $('fullscreen-pause').textContent = t(running ? 'player.pauseShort' : 'player.resumeShort');
+  $('stage-status').textContent = t(running ? 'player.running' : active.started ? 'player.paused' : 'player.waiting');
+  $('stage-help').textContent = running ? demo.hint || t('player.hint') : t(demo.startOnArrow ? 'player.arrowReady' : 'player.ready');
+}
+function updatePageLanguage() {
+  document.documentElement.lang = getLanguage();
+  document.title = t('site.title');
+  document.querySelector('meta[name="description"]').content = t('site.description');
+  for (const el of document.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
+  for (const el of document.querySelectorAll('[data-i18n-aria-label]')) el.setAttribute('aria-label', t(el.dataset.i18nAriaLabel));
+  for (const button of document.querySelectorAll('[data-language-toggle]')) {
+    const english = getLanguage() === 'en';
+    button.textContent = english ? '日本語' : 'English'; button.lang = english ? 'ja' : 'en';
+    button.setAttribute('aria-label', english ? '日本語に切り替える' : 'Switch to English');
+  }
+  refreshGallery();
+  if (active) {
+    applyDemoText(active.demo);
+    active.values = settingsFor(localizeDemo(active.demo), active.values);
+    updateTransport(); active.instance.localize?.(); render();
+  } else {
+    $('stage-status').textContent = t(failed ? 'player.errorStatus' : 'player.waiting');
+    $('toggle-play').textContent = t('player.start');
+    $('fullscreen-pause').textContent = t('player.pauseShort');
+  }
+  $('player-message').textContent = messageKey ? t(messageKey) : '';
+  $('fullscreen').textContent = t(document.fullscreenElement ? 'player.exitFullscreen' : 'player.fullscreen');
+}
 
 function render() {
   if (active) active.instance.render({ elapsed: active.elapsed, delta: 0 });
@@ -57,36 +103,33 @@ function setRunning(running) {
   cancelAnimationFrame(active.raf);
   if (running) { active.started = true; active.raf = requestAnimationFrame(frame); }
   else { active.instance.suspend?.(); render(); }
-  $('toggle-play').textContent = running ? '一時停止 Ⅱ' : active.started ? '再開する ↗' : '開始する ↗';
-  $('fullscreen-pause').textContent = running ? '一時停止' : '再開する';
-  $('stage-status').textContent = running ? '表示中' : active.started ? '一時停止中' : '待機中';
-  $('stage-help').textContent = running ? active.demo.hint || '説明に沿って操作してください' : active.demo.startOnArrow ? '矢印ボタンを押すと、その方向の刺激を表示します' : '「開始する」または「再開する」で操作を有効にする';
+  updateTransport();
 }
-function settingsFor(demo) {
+function settingsFor(demo, initialValues = {}) {
   const values = {}, container = $('settings'); container.replaceChildren();
   for (const setting of demo.settings) {
-    values[setting.key] = setting.default;
+    values[setting.key] = initialValues[setting.key] ?? setting.default;
     const label = document.createElement(setting.type === 'checkbox' ? 'label' : 'div'); label.className = 'setting';
     const input = document.createElement('input'); input.type = setting.type; input.name = setting.key;
     if (setting.type === 'checkbox') {
-      label.classList.add('check-setting'); input.checked = setting.default;
+      label.classList.add('check-setting'); input.checked = values[setting.key];
       label.append(input, document.createTextNode(setting.label));
     } else {
       const row = document.createElement('span'); row.className = 'setting-label';
       const name = document.createElement('label'); name.textContent = setting.label;
-      const output = document.createElement('output'); output.textContent = setting.default + (setting.unit || '');
+      const output = document.createElement('output'); output.textContent = values[setting.key] + (setting.unit || '');
       input.id = `setting-${demo.id}-${setting.key}`; output.htmlFor = input.id;
       name.htmlFor = input.id;
       input.setAttribute('aria-label', setting.label);
-      input.min = setting.min; input.max = setting.max; input.step = setting.step; input.value = setting.default;
+      input.min = setting.min; input.max = setting.max; input.step = setting.step; input.value = values[setting.key];
       const track = document.createElement('div'); track.className = 'setting-track';
       const marker = document.createElement('span'); marker.className = 'setting-default-marker'; marker.setAttribute('aria-hidden', 'true');
       const ratio = (setting.default - setting.min) / (setting.max - setting.min);
       marker.style.left = `calc(${ratio * 100}% + ${8 - 16 * ratio}px)`;
       track.append(input, marker);
       const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'setting-default-button';
-      reset.textContent = `初期値 ${setting.default}${setting.unit || ''}`;
-      reset.setAttribute('aria-label', `${setting.label}を初期値に戻す`);
+      reset.textContent = t('setting.default', { value: setting.default, unit: setting.unit || '' });
+      reset.setAttribute('aria-label', t('setting.reset', { label: setting.label }));
       reset.addEventListener('click', () => {
         input.value = setting.default;
         input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -111,21 +154,19 @@ function cleanup() {
 function openDemo(id, trigger) {
   const demo = demos.find((item) => item.id === id);
   if (!demo) return;
-  cleanup(); opener = trigger || document.querySelector('.demo-card.live');
-  $('player-title').textContent = demo.title;
+  cleanup(); opener = trigger?.id || `card-${demo.id}`; failed = false; messageKey = null;
+  applyDemoText(demo);
   $('player-number').textContent = String(demos.indexOf(demo) + 1).padStart(2, '0');
-  $('player-description').textContent = demo.description; $('player-note').textContent = demo.note; $('player-message').textContent = '';
-  $('player-badge').textContent = demo.badge || 'デモ'; $('stage-label').textContent = demo.stageLabel || demo.kind;
+  $('player-message').textContent = ''; $('stage-label').textContent = demo.stageLabel || demo.kind;
   stage.classList.toggle('rp-stage', demo.id === 'perpetual-square');
   stage.classList.toggle('wind-stage', demo.stageClass === 'wind-stage');
   stage.classList.toggle('bar-stage', demo.stageClass === 'bar-stage');
   $('settings-heading').hidden = demo.settings.length === 0;
   $('demo-overlay').replaceChildren();
-  canvas.setAttribute('aria-label', demo.canvasLabel || `${demo.title}の操作領域。操作方法は説明を参照。`);
-  const values = settingsFor(demo);
+  const values = settingsFor(localizeDemo(demo));
   if (!player.open) player.showModal();
   try {
-    const instance = demo.create({ canvas, overlay: $('demo-overlay'), start: () => setRunning(true), invalidate: render, setHint: (text) => { $('stage-help').textContent = text; }, setStageLabel: (text) => { $('stage-label').textContent = text; } });
+    const instance = demo.create({ canvas, overlay: $('demo-overlay'), start: () => setRunning(true), invalidate: render, setHint: (text) => { if (active?.running) $('stage-help').textContent = text; }, setStageLabel: (text) => { $('stage-label').textContent = text; } });
     const events = new AbortController(), observer = new ResizeObserver(resize);
     active = { instance, events, observer, values, demo, running: false, started: false, elapsed: 0, lastTime: null, raf: 0 };
     resize(); instance.setSettings({ ...values }); setRunning(false); observer.observe(stage);
@@ -146,30 +187,35 @@ function openDemo(id, trigger) {
     $('toggle-play').disabled = false; $('reset-demo').disabled = false;
     $('toggle-play').focus();
   } catch (error) {
-    cleanup(); $('player-message').textContent = 'このデモを開始できません。ページを再読み込みするか、別のブラウザでお試しください。';
-    $('stage-status').textContent = '読み込みエラー'; $('toggle-play').disabled = true; $('reset-demo').disabled = true;
+    cleanup(); failed = true; messageKey = 'player.loadError'; $('player-message').textContent = t(messageKey);
+    $('stage-status').textContent = t('player.errorStatus'); $('toggle-play').disabled = true; $('reset-demo').disabled = true;
     console.error(error);
   }
 }
 $('toggle-play').addEventListener('click', () => { if (active) { setRunning(!active.running); if (active.running) canvas.focus({ preventScroll: true }); } });
 $('reset-demo').addEventListener('click', () => {
   if (!active) return;
-  setRunning(false); active.started = false; active.elapsed = 0; active.instance.reset(); active.values = settingsFor(active.demo);
-  active.instance.setSettings({ ...active.values }); setRunning(false); $('player-message').textContent = ''; render();
+  setRunning(false); active.started = false; active.elapsed = 0; active.instance.reset(); active.values = settingsFor(localizeDemo(active.demo));
+  active.instance.setSettings({ ...active.values }); setRunning(false); messageKey = null; $('player-message').textContent = ''; render();
 });
 $('close-player').addEventListener('click', () => player.close());
 player.addEventListener('cancel', (event) => { if (document.fullscreenElement) { event.preventDefault(); document.exitFullscreen().catch(() => {}); } });
-player.addEventListener('close', () => { cleanup(); history.replaceState(null, '', '#collection'); opener?.focus({ preventScroll: true }); });
+player.addEventListener('close', () => { cleanup(); history.replaceState(null, '', '#collection'); $(opener)?.focus({ preventScroll: true }); });
 $('fullscreen-pause').addEventListener('click', () => { if (active) setRunning(!active.running); });
 $('fullscreen-exit').addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); });
 $('fullscreen').disabled = !document.fullscreenEnabled;
 $('fullscreen').addEventListener('click', async () => {
   try { if (document.fullscreenElement) await document.exitFullscreen(); else { await stage.requestFullscreen(); canvas.focus(); } }
-  catch { $('player-message').textContent = 'この環境では全画面表示を利用できません。'; }
+  catch { messageKey = 'player.fullscreenError'; $('player-message').textContent = t(messageKey); }
 });
-document.addEventListener('fullscreenchange', () => { $('fullscreen').textContent = document.fullscreenElement ? '全画面を終了' : '全画面 ⛶'; resize(); });
+document.addEventListener('fullscreenchange', () => { $('fullscreen').textContent = t(document.fullscreenElement ? 'player.exitFullscreen' : 'player.fullscreen'); resize(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && active?.running) setRunning(false); });
 window.addEventListener('blur', () => { if (active?.running) setRunning(false); });
 window.addEventListener('pagehide', cleanup);
 function followHash() { const match = location.hash.match(/^#demo\/([a-z0-9-]+)$/); if (match) openDemo(match[1]); else if (player.open) player.close(); }
-window.addEventListener('hashchange', followHash); followHash();
+for (const button of document.querySelectorAll('[data-language-toggle]')) button.addEventListener('click', () => {
+  setLanguage(getLanguage() === 'ja' ? 'en' : 'ja');
+  try { localStorage.setItem('rp-demo-language', getLanguage()); } catch { /* 保存不可でも現在のページには反映。 */ }
+  updatePageLanguage();
+});
+window.addEventListener('hashchange', followHash); updatePageLanguage(); followHash();

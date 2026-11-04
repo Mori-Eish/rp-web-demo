@@ -11,30 +11,31 @@
   <script type="module" src="./app.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#collection">デモ一覧へスキップ</a>
+  <a class="skip-link" href="#collection" data-i18n="collection.skip">デモ一覧へスキップ</a>
   <header class="site-header wrap">
-    <a class="site-title" href="./" aria-label="RP / PH Webデモ ホーム">RP / PH Webデモ</a>
+    <a class="site-title" href="./" aria-label="RP / PH Webデモ ホーム" data-i18n="site.title" data-i18n-aria-label="site.home">RP / PH Webデモ</a>
+    <button type="button" class="language-toggle" data-language-toggle lang="en" aria-label="Switch to English">English</button>
   </header>
 
   <main class="wrap">
     <section id="collection" class="collection" aria-labelledby="collection-title">
-      <div class="section-head"><h1 id="collection-title">デモ一覧<span class="section-count">4件</span></h1></div>
+      <div class="section-head"><h1 id="collection-title"><span data-i18n="collection.title">デモ一覧</span><span class="section-count">4件</span></h1></div>
       <div class="demo-grid" id="demo-grid"></div>
     </section>
   </main>
 
   <dialog id="player" aria-labelledby="player-title">
     <div class="player-shell">
-      <header class="player-header"><div><span class="eyebrow">デモ / <span id="player-number">01</span></span><h2 id="player-title"></h2></div><button class="icon-button" id="close-player" aria-label="デモを閉じる">✕</button></header>
+      <header class="player-header"><div><span class="eyebrow"><span data-i18n="player.demo">デモ</span> / <span id="player-number">01</span></span><h2 id="player-title"></h2></div><div class="player-actions"><button type="button" class="language-toggle" data-language-toggle lang="en" aria-label="Switch to English">English</button><button class="icon-button" id="close-player" aria-label="デモを閉じる" data-i18n-aria-label="player.close">✕</button></div></header>
       <div class="player-body">
-        <div class="stage-column"><div id="stage" class="stage"><div class="stage-topline"><span id="stage-status" role="status">待機中</span><span id="stage-label"></span></div><canvas id="demo-canvas" tabindex="0" aria-label="デモの操作領域"></canvas><div id="demo-overlay" class="demo-overlay"></div><div class="stage-help" id="stage-help"></div><div class="fullscreen-controls"><button class="button button-quiet" id="fullscreen-pause">一時停止</button><button class="button button-quiet" id="fullscreen-exit">全画面を終了</button></div></div>
-          <div class="transport"><button class="button button-dark" id="toggle-play">開始する <span aria-hidden="true">↗</span></button><button class="button button-quiet" id="reset-demo">リセット</button><button class="button button-quiet fullscreen-button" id="fullscreen">全画面 <span aria-hidden="true">⛶</span></button></div>
+        <div class="stage-column"><div id="stage" class="stage"><div class="stage-topline"><span id="stage-status" role="status">待機中</span><span id="stage-label"></span></div><canvas id="demo-canvas" tabindex="0" aria-label="デモの操作領域"></canvas><div id="demo-overlay" class="demo-overlay"></div><div class="stage-help" id="stage-help"></div><div class="fullscreen-controls"><button type="button" class="button button-quiet" data-language-toggle lang="en" aria-label="Switch to English">English</button><button class="button button-quiet" id="fullscreen-pause">一時停止</button><button class="button button-quiet" id="fullscreen-exit" data-i18n="player.exitFullscreen">全画面を終了</button></div></div>
+          <div class="transport"><button class="button button-dark" id="toggle-play">開始する <span aria-hidden="true">↗</span></button><button class="button button-quiet" id="reset-demo" data-i18n="player.reset">リセット</button><button class="button button-quiet fullscreen-button" id="fullscreen">全画面 <span aria-hidden="true">⛶</span></button></div>
         </div>
-        <aside class="controls" aria-label="デモの説明と設定"><span class="pill" id="player-badge"></span><p id="player-description"></p><div class="control-divider"></div><p class="eyebrow" id="settings-heading">設定</p><div id="settings"></div><div class="player-note"><strong>このデモについて</strong><p id="player-note"></p></div><p id="player-message" class="player-message" role="status" aria-live="polite"></p></aside>
+        <aside class="controls" aria-label="デモの説明と設定" data-i18n-aria-label="player.controls"><span class="pill" id="player-badge"></span><p id="player-description"></p><div class="control-divider"></div><p class="eyebrow" id="settings-heading" data-i18n="player.settings">設定</p><div id="settings"></div><div class="player-note"><strong data-i18n="player.about">このデモについて</strong><p id="player-note"></p></div><p id="player-message" class="player-message" role="status" aria-live="polite"></p></aside>
       </div>
-      <footer class="player-footer"><span>マウス・タッチ・キーボード対応</span><span>Esc で閉じる</span></footer>
+      <footer class="player-footer"><span data-i18n="player.input">マウス・タッチ・キーボード対応</span><span data-i18n="player.escape">Esc で閉じる</span></footer>
     </div>
   </dialog>
-  <noscript><p class="noscript">デモを表示するにはJavaScriptを有効にしてください。</p></noscript>
+  <noscript><p class="noscript">デモを表示するにはJavaScriptを有効にしてください。<br>Enable JavaScript to view the demos.</p></noscript>
 </body>
 </html>

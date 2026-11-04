@@ -1,3 +1,5 @@
+import { t } from '../i18n.js';
+
 // 論文 chap3.tex の表 four-stroke-values と Smooth4st.shader の線形補間。
 // 背景 #808080 は chap4.tex。物理寸法17 mmは再現せず、ブラウザに合わせて拡縮する。
 export const squareDefaults = Object.freeze({ frequency: 2, sizePercent: 50, edgeRatio: .04, background: 128 / 255 });
@@ -52,7 +54,7 @@ export const perpetualSquare = {
     let settings = Object.fromEntries(perpetualSquare.settings.map((item) => [item.key, item.default]));
     let cycles = 0, lastElapsed = 0;
     const group = document.createElement('div');
-    group.className = 'rp-direction-controls'; group.setAttribute('role', 'group'); group.setAttribute('aria-label', '見かけの進行方向');
+    group.className = 'rp-direction-controls'; group.setAttribute('role', 'group'); group.setAttribute('aria-label', t('rp.directions'));
     const output = document.createElement('output'); output.className = 'rp-direction-label'; output.setAttribute('aria-live', 'polite');
     const buttons = new Map();
     function updateControls() {
@@ -61,21 +63,27 @@ export const perpetualSquare = {
       group.style.setProperty('--rp-radius', `${radius}px`);
       setStageLabel?.(`FIXED POSITION / ${settings.frequency.toFixed(1)} Hz`);
     }
+    function localizeControls() {
+      group.setAttribute('aria-label', t('rp.directions'));
+      for (const [key, button] of buttons) button.setAttribute('aria-label', t('rp.show', { direction: t(`direction.${key}`) }));
+      output.textContent = t('rp.selected', { direction: t(`direction.${direction}`), arrow: directions[direction].arrow });
+    }
     function select(next, run = true) {
       direction = next;
       for (const [key, button] of buttons) button.setAttribute('aria-pressed', String(key === direction));
-      output.textContent = `選択方向：${directions[direction].label} ${directions[direction].arrow}`;
+      localizeControls();
       if (run) start();
-      setHint('矢印で方向を選択 · 四角形の位置は固定です');
+      setHint(t('rp.hint'));
       invalidate();
     }
     for (const [key, value] of Object.entries(directions)) {
       const button = document.createElement('button'); button.type = 'button'; button.className = `rp-arrow rp-arrow-${key}`;
-      button.textContent = value.arrow; button.setAttribute('aria-label', `${value.label}向きに見える刺激を表示`);
+      button.textContent = value.arrow; button.setAttribute('aria-label', t('rp.show', { direction: t(`direction.${key}`) }));
       button.addEventListener('click', () => select(key)); buttons.set(key, button); group.append(button);
     }
     group.append(output); overlay.append(group); select('up', false);
     return {
+      localize() { localizeControls(); setHint(t('rp.hint')); },
       resize(view) {
         width = view.width; height = view.height;
         panelSize = Math.max(40, Math.min(width - 132, height - 154, 360));

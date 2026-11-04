@@ -1,3 +1,5 @@
+import { t } from '../i18n.js';
+
 // RP刺激ではない中立サンプル。新しいデモは _template.js を複製して登録する。
 export const inputSandbox = {
   id: 'input-sandbox',
@@ -21,16 +23,17 @@ export const inputSandbox = {
     const limit = (value, size, extent) => Math.max(size / 2 + 8, Math.min(extent - size / 2 - 8, value));
     const constrain = () => { x = limit(x * width, settings.size, width) / width; y = limit(y * height, settings.size, height) / height; };
     return {
+      localize() { setHint(t(drag ? 'sandbox.dragging' : 'sandbox.hint')); },
       resize(view) { width = view.width; height = view.height; constrain(); },
       setSettings(next) { settings = next; constrain(); },
       pointer({ type, x: px, y: py, pointerId }) {
         if (type === 'down' && !drag && Math.abs(px - x * width) <= settings.size / 2 + 8 && Math.abs(py - y * height) <= settings.size / 2 + 8) {
           drag = { pointerId, dx: px - x * width, dy: py - y * height };
-          setHint('ドラッグ中 · 指を離すと停止します');
+          setHint(t('sandbox.dragging'));
         } else if (type === 'move' && drag?.pointerId === pointerId) {
           x = (px - drag.dx) / width; y = (py - drag.dy) / height; constrain();
         } else if ((type === 'up' || type === 'cancel') && drag?.pointerId === pointerId) {
-          drag = null; setHint('四角形をドラッグ / 矢印キーで移動');
+          drag = null; setHint(t('sandbox.hint'));
         }
       },
       key({ key, shiftKey }) {
