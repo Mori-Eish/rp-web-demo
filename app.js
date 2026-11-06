@@ -53,6 +53,7 @@ function updateTransport() {
   $('fullscreen-pause').textContent = t(running ? 'player.pauseShort' : 'player.resumeShort');
   $('stage-status').textContent = t(running ? 'player.running' : active.started ? 'player.paused' : 'player.waiting');
   $('stage-help').textContent = running ? demo.hint || t('player.hint') : t(demo.startOnArrow ? 'player.arrowReady' : 'player.ready');
+  active.instance.localize?.();
 }
 function updatePageLanguage() {
   document.documentElement.lang = getLanguage();
@@ -69,7 +70,7 @@ function updatePageLanguage() {
   if (active) {
     applyDemoText(active.demo);
     active.values = settingsFor(localizeDemo(active.demo), active.values);
-    updateTransport(); active.instance.localize?.(); render();
+    updateTransport(); render();
   } else {
     $('stage-status').textContent = t(failed ? 'player.errorStatus' : 'player.waiting');
     $('toggle-play').textContent = t('player.start');
