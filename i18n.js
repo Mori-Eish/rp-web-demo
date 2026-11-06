@@ -29,7 +29,8 @@ export const messages = {
     'sandbox.dragging': 'ドラッグ中 · 指を離すと停止します', 'sandbox.hint': '四角形をドラッグ / 矢印キーで移動',
     'zones.same': '同方向', 'zones.opposite': '逆方向',
     'setting.autoMove': '自動で往復する', 'setting.autoSpeed': '自動移動の速度',
-    'alternating.autoHint': '一定速度で自動往復 · 一時停止で止められます',
+    'motion.autoHint': '一定速度で自動往復 · 一時停止で止められます',
+    'fan.manualHint': 'マウスを動かす / タッチでドラッグ / 矢印キー',
     'alternating.manualHint': '左右に動かす · マウス / タッチでドラッグ / 左右の矢印キー',
   },
   en: {
@@ -62,7 +63,8 @@ export const messages = {
     'sandbox.dragging': 'Dragging · Release to stop', 'sandbox.hint': 'Drag the square / Move with arrow keys',
     'zones.same': 'Same', 'zones.opposite': 'Opposite',
     'setting.autoMove': 'Automatic movement', 'setting.autoSpeed': 'Automatic speed',
-    'alternating.autoHint': 'Automatic motion at constant speed · Select Pause to stop',
+    'motion.autoHint': 'Automatic motion at constant speed · Select Pause to stop',
+    'fan.manualHint': 'Move the mouse / Touch and drag / Arrow keys',
     'alternating.manualHint': 'Move left and right · Mouse / Touch and drag / Left and right arrow keys',
   },
 };
@@ -84,10 +86,10 @@ const englishDemos = {
   },
   'fan-wind': {
     title: 'Fan wind', badge: 'Interactive demo',
-    description: 'Move the square cursor from left to right between the fans.',
-    note: 'Move the mouse to control the square. On touchscreens, drag. You can also use the arrow keys.',
-    hint: 'Move left to right · Mouse / Touch and drag / Arrow keys',
-    canvasLabel: 'Fan wind interaction area. Use the mouse, touch and drag, or arrow keys to move the square from left to right.',
+    description: 'The square cursor moves back and forth between the fans at constant speed.',
+    note: 'Press Start for automatic horizontal motion. Disable Automatic movement to use the mouse, touch and drag, or arrow keys.',
+    hint: 'Automatic motion, or use the mouse, touch and drag, or arrow keys',
+    canvasLabel: 'Fan wind interaction area. Move the square automatically, or use the mouse, touch and drag, or arrow keys.',
   },
   'bending-bar': {
     title: 'Apparent bar bending', badge: 'Interactive demo',
