@@ -30,8 +30,8 @@ export const alternatingDirections = {
   canvasLabel: '左右の移動方向に対して、左から同方向・逆方向・同方向・逆方向のRPを提示する4エリア。',
   thumbnail: 'directions',
   settings: [
-    { key: 'autoMove', label: '自動で往復する', type: 'checkbox', default: false },
-    { key: 'autoSpeed', label: '自動移動の速度', type: 'range', min: 20, max: 300, step: 10, default: 120, unit: ' px/s' },
+    { key: 'autoMove', label: '自動で往復する', type: 'checkbox', default: true },
+    { key: 'autoSpeed', label: '自動移動の速度', type: 'range', min: 20, max: 300, step: 10, default: 50, unit: ' px/s' },
     { key: 'frequency', label: '周波数', type: 'range', min: .1, max: 4, step: .1, default: 2, unit: ' Hz' },
     { key: 'cursorSize', label: 'カーソルサイズ', type: 'range', min: 24, max: 80, step: 2, default: 60, unit: ' px' },
     { key: 'edgePercent', label: 'エッジ幅', type: 'range', min: .5, max: 20, step: .5, default: 2.5, unit: ' %' },
