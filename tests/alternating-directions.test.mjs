@@ -1,6 +1,6 @@
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { alternatingDirections, directionZoneAt, relativeRPDirection } from '../dist/demos/alternating-directions.js';
+import { alternatingDirections, directionZoneAt, relativeRPDirection, advanceAutomatic } from '../dist/demos/alternating-directions.js';
 import { fanWind } from '../dist/demos/fan-wind.js';
 import { setLanguage } from '../dist/i18n.js';
 
@@ -8,13 +8,13 @@ afterEach(() => setLanguage('ja'));
 const white = 'rgb(255,255,255)', black = 'rgb(0,0,0)';
 
 test('4等分の境界と同・逆・同・逆の対応を左右の移動で維持する', () => {
-  assert.deepEqual(alternatingDirections.settings.slice(0, 3), fanWind.settings, 'ファンと同じ標準値と調整範囲');
+  assert.deepEqual(alternatingDirections.settings.filter((setting) => ['frequency', 'cursorSize', 'edgePercent'].includes(setting.key)), fanWind.settings, 'ファンと同じ標準値と調整範囲');
   assert.deepEqual([-1, 0, .249999, .25, .499999, .5, .749999, .75, 1, 2].map(directionZoneAt), [0, 0, 0, 1, 1, 2, 2, 3, 3, 3]);
   assert.deepEqual([.125, .375, .625, .875].map((u) => relativeRPDirection(u, 'right')), ['right', 'left', 'right', 'left']);
   assert.deepEqual([.125, .375, .625, .875].map((u) => relativeRPDirection(u, 'left')), ['left', 'right', 'left', 'right']);
 });
 
-function harness() {
+function harness({ guides = false } = {}) {
   const rects = [], texts = [], lines = [];
   const ctx = {
     fillRect(...coords) { rects.push({ coords, color: this.fillStyle }); },
@@ -23,6 +23,7 @@ function harness() {
   };
   const instance = alternatingDirections.create({ canvas: { getContext: () => ctx }, setStageLabel() {} });
   instance.resize({ width: 800, height: 480 });
+  instance.setSettings({ guides });
   const render = (elapsed = 0) => {
     rects.length = texts.length = lines.length = 0;
     instance.render({ elapsed });
@@ -33,7 +34,7 @@ function harness() {
 }
 
 test('区間を順に通過・引き返し、境界上でも中心位置からRPを選ぶ', () => {
-  const { render, mouse } = harness();
+  const { render, mouse } = harness({ guides: true });
   const initial = render();
   assert.deepEqual(initial.rects[1].coords, [8, 210, 60, 60]);
   assert.deepEqual(initial.lines, [
@@ -116,4 +117,61 @@ test('タッチ・ペンの識別と解除、リセットに対応する', () =>
   instance.reset(); assert.deepEqual(render(), initial);
   instance.key({ key: 'ArrowRight', shiftKey: false }); assert.deepEqual(render().rects[1].coords, [16, 210, 60, 60]);
   instance.dispose();
+});
+
+test('初期状態と全設定リセットでは境界線・条件名・自動移動を非表示またはOFFにする', () => {
+  const defaults = Object.fromEntries(alternatingDirections.settings.map((setting) => [setting.key, setting.default]));
+  assert.equal(defaults.guides, false); assert.equal(defaults.autoMove, false);
+  const { instance, render } = harness();
+  const initial = render();
+  assert.equal(initial.lines.length, 0);
+  assert.deepEqual(initial.texts.map((entry) => entry[0]), ['START', 'GOAL']);
+  assert.deepEqual(render(1).rects[1].coords, initial.rects[1].coords, '手動モードは再生だけでは動かない');
+  instance.setSettings({ guides: true, autoMove: true }); render(2);
+  instance.reset(); instance.setSettings(defaults);
+  assert.deepEqual(render(), initial);
+});
+
+test('自動モードは一定速度で往復し、往路・復路で各区間の相対方向を維持する', () => {
+  const { instance, render, mouse } = harness();
+  instance.resize({ width: 796, height: 480 }); // 中心の移動幅720px。120px/sで片道6秒。
+  instance.setSettings({ autoMove: true }); render();
+  const right = [black, black, white], left = [black, white, black];
+  [.75, 2.25, 3.75, 5.25].forEach((time, index) => {
+    const state = render(time);
+    assert.ok(Math.abs(state.rects[1].coords[0] - (8 + time * 120)) < 1e-10);
+    assert.deepEqual(state.rects.slice(1).map((r) => r.color), index % 2 ? left : right);
+    mouse(100); instance.key({ key: 'ArrowLeft', shiftKey: true });
+    assert.deepEqual(render(time), state, '自動中は手動入力を無視する');
+  });
+  const end = render(6);
+  assert.equal(end.rects[1].coords[0], 728);
+  assert.deepEqual(end.rects.slice(1).map((r) => r.color), [white, white, black], '右端では左向きへ折り返し、第4区間の逆方向は右向きRP');
+  [6.75, 8.25, 9.75, 11.25].forEach((time, index) => {
+    const state = render(time);
+    assert.ok(Math.abs(state.rects[1].coords[0] - (728 - (time - 6) * 120)) < 1e-10);
+    assert.deepEqual(state.rects.slice(1).map((r) => r.color), index % 2 ? left : right);
+  });
+  assert.ok(Math.abs(render(31.5).rects[1].coords[0] - 548) < 1e-10, '大きな時間刻みでも折り返し後の距離を失わない');
+  assert.deepEqual(advanceAutomatic(.25, 'left', 0, 720), { position: .25, movement: 'left' });
+});
+
+test('自動モードの一時停止・再開・速度変更・手動切替で位置と位相を保つ', () => {
+  const { instance, render, mouse } = harness();
+  instance.setSettings({ autoMove: true }); render();
+  const atHalfSecond = render(.5);
+  assert.equal(atHalfSecond.rects[1].coords[0], 68);
+  instance.suspend();
+  assert.deepEqual(render(.5), atHalfSecond, '一時停止中の経過時間が同じ描画では進まない');
+  instance.setSettings({ autoSpeed: 240 });
+  assert.deepEqual(render(.5), atHalfSecond, '速度変更の瞬間には移動も点滅位相も飛ばない');
+  assert.equal(render(.75).rects[1].coords[0], 128, '再開後は新しい速度240px/sで進む');
+  const beforeLanguage = render(.75);
+  setLanguage('en'); instance.localize(); assert.deepEqual(render(.75), beforeLanguage);
+  instance.setSettings({ autoMove: false });
+  assert.deepEqual(render(.75), beforeLanguage, '手動へ切り替えても位置を初期化しない');
+  mouse(300); assert.equal(render(.75).rects[1].coords[0], 270);
+  const beforeAuto = render(.75);
+  instance.setSettings({ autoMove: true }); assert.deepEqual(render(.75), beforeAuto);
+  assert.equal(render(1).rects[1].coords[0], 330);
 });

@@ -28,6 +28,9 @@ export const messages = {
     'direction.up': '上', 'direction.down': '下', 'direction.left': '左', 'direction.right': '右',
     'sandbox.dragging': 'ドラッグ中 · 指を離すと停止します', 'sandbox.hint': '四角形をドラッグ / 矢印キーで移動',
     'zones.same': '同方向', 'zones.opposite': '逆方向',
+    'setting.autoMove': '自動で往復する', 'setting.autoSpeed': '自動移動の速度',
+    'alternating.autoHint': '一定速度で自動往復 · 一時停止で止められます',
+    'alternating.manualHint': '左右に動かす · マウス / タッチでドラッグ / 左右の矢印キー',
   },
   en: {
     'site.title': 'RP / PH Web Demos', 'site.home': 'RP / PH Web Demos home',
@@ -58,15 +61,18 @@ export const messages = {
     'direction.up': 'Up', 'direction.down': 'Down', 'direction.left': 'Left', 'direction.right': 'Right',
     'sandbox.dragging': 'Dragging · Release to stop', 'sandbox.hint': 'Drag the square / Move with arrow keys',
     'zones.same': 'Same', 'zones.opposite': 'Opposite',
+    'setting.autoMove': 'Automatic movement', 'setting.autoSpeed': 'Automatic speed',
+    'alternating.autoHint': 'Automatic motion at constant speed · Select Pause to stop',
+    'alternating.manualHint': 'Move left and right · Mouse / Touch and drag / Left and right arrow keys',
   },
 };
 
 const englishDemos = {
   'alternating-directions': {
     title: 'Same and opposite RP', badge: 'Interactive demo',
-    description: 'Move the square left and right. Four areas alternate between RP in the same and opposite directions to your movement.',
-    note: 'From left to right: same, opposite, same, opposite. The cursor moves horizontally only. When you stop, RP continues relative to your last movement direction. Touch and drag or use the left and right arrow keys.',
-    hint: 'Move left and right · Mouse / Touch and drag / Left and right arrow keys',
+    description: 'Move the cursor manually or automatically. Four areas alternate between RP in the same and opposite directions to its movement.',
+    note: 'From left to right: same, opposite, same, opposite. Enable Automatic movement and press Start to move back and forth at constant speed. With it off, use the mouse, touch and drag, or left and right arrow keys.',
+    hint: 'Move manually, or enable Automatic movement and press Start',
     canvasLabel: 'Four areas present RP relative to horizontal cursor movement: same, opposite, same, opposite from left to right.',
   },
   'perpetual-square': {
