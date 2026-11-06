@@ -14,7 +14,7 @@ test('4等分の境界と同・逆・同・逆の対応を左右の移動で維�
   assert.deepEqual([.125, .375, .625, .875].map((u) => relativeRPDirection(u, 'left')), ['left', 'right', 'left', 'right']);
 });
 
-function harness({ guides = false } = {}) {
+function harness({ guides = false, autoMove = false } = {}) {
   const rects = [], texts = [], lines = [];
   const ctx = {
     fillRect(...coords) { rects.push({ coords, color: this.fillStyle }); },
@@ -23,7 +23,7 @@ function harness({ guides = false } = {}) {
   };
   const instance = alternatingDirections.create({ canvas: { getContext: () => ctx }, setStageLabel() {} });
   instance.resize({ width: 800, height: 480 });
-  instance.setSettings({ guides });
+  instance.setSettings({ guides, autoMove });
   const render = (elapsed = 0) => {
     rects.length = texts.length = lines.length = 0;
     instance.render({ elapsed });
@@ -119,14 +119,14 @@ test('タッチ・ペンの識別と解除、リセットに対応する', () =>
   instance.dispose();
 });
 
-test('初期状態と全設定リセットでは境界線・条件名・自動移動を非表示またはOFFにする', () => {
+test('初期状態と全設定リセットでは自動往復ON・50px/s、ガイド非表示にする', () => {
   const defaults = Object.fromEntries(alternatingDirections.settings.map((setting) => [setting.key, setting.default]));
-  assert.equal(defaults.guides, false); assert.equal(defaults.autoMove, false);
-  const { instance, render } = harness();
+  assert.equal(defaults.guides, false); assert.equal(defaults.autoMove, true); assert.equal(defaults.autoSpeed, 50);
+  const { instance, render } = harness({ autoMove: true });
   const initial = render();
   assert.equal(initial.lines.length, 0);
   assert.deepEqual(initial.texts.map((entry) => entry[0]), ['START', 'GOAL']);
-  assert.deepEqual(render(1).rects[1].coords, initial.rects[1].coords, '手動モードは再生だけでは動かない');
+  assert.equal(render(1).rects[1].coords[0], 58, '標準の自動移動は1秒で50px進む');
   instance.setSettings({ guides: true, autoMove: true }); render(2);
   instance.reset(); instance.setSettings(defaults);
   assert.deepEqual(render(), initial);
@@ -135,7 +135,7 @@ test('初期状態と全設定リセットでは境界線・条件名・自動�
 test('自動モードは一定速度で往復し、往路・復路で各区間の相対方向を維持する', () => {
   const { instance, render, mouse } = harness();
   instance.resize({ width: 796, height: 480 }); // 中心の移動幅720px。120px/sで片道6秒。
-  instance.setSettings({ autoMove: true }); render();
+  instance.setSettings({ autoMove: true, autoSpeed: 120 }); render();
   const right = [black, black, white], left = [black, white, black];
   [.75, 2.25, 3.75, 5.25].forEach((time, index) => {
     const state = render(time);
@@ -158,7 +158,7 @@ test('自動モードは一定速度で往復し、往路・復路で各区間�
 
 test('自動モードの一時停止・再開・速度変更・手動切替で位置と位相を保つ', () => {
   const { instance, render, mouse } = harness();
-  instance.setSettings({ autoMove: true }); render();
+  instance.setSettings({ autoMove: true, autoSpeed: 120 }); render();
   const atHalfSecond = render(.5);
   assert.equal(atHalfSecond.rects[1].coords[0], 68);
   instance.suspend();
