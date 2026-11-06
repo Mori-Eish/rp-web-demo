@@ -1,6 +1,8 @@
-import test from 'node:test';
+import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { fanWind, windZoneAt, windZones } from '../dist/demos/fan-wind.js';
+import { setLanguage } from '../dist/i18n.js';
+afterEach(() => setLanguage('ja'));
 
 test('中心位置による風エリアの進入・退出・上下の方向判定', () => {
   assert.equal(windZoneAt(80, 240, 800, 480), null);
@@ -30,12 +32,12 @@ test('マウス追従・領域外の一様点滅・領域内だけのRP・設定
     });
     const demo = fanWind.create({ canvas: { getContext: () => context }, overlay: { append() {} }, setHint() {}, setStageLabel() {} });
     demo.resize({ width: 800, height: 480 });
+    demo.setSettings({ autoMove: false });
     const render = (elapsed) => { calls.length = 0; decorations.length = 0; fanColors.length = 0; windCurves.length = 0; demo.render({ elapsed }); return calls; };
     const mouse = (x, y) => demo.pointer({ type: 'move', pointerType: 'mouse', pointerId: 1, x, y });
     assert.deepEqual(render(0).at(-1), { coords: [50, 210, 60, 60], color: 'rgb(255,255,255)' });
     assert.equal(calls.length, 2, '背景とカーソル以外の矩形は塗らない');
-    assert.deepEqual(decorations.map((entry) => entry[0]), ['fillText', 'fillText'], '枠線や点線は描かない');
-    assert.deepEqual(decorations.map((entry) => entry[1]), ['START', 'GOAL'], '風向き・エリア状態の文字は描かない');
+    assert.deepEqual(decorations, [], '文字・枠線・点線を描かない');
     const idleFanColors = [...fanColors];
     const initialWindCurves = [...windCurves];
     assert.ok(initialWindCurves.length > 0, 'ファンの前に風の曲線を描く');
@@ -84,4 +86,80 @@ test('マウス追従・領域外の一様点滅・領域内だけのRP・設定
     const edge = render(0).at(-1).coords;
     assert.equal(edge[0] + edge[2], 312, '表示端を越えない');
     demo.dispose();
+});
+
+function automaticHarness() {
+  const rects = [], curves = [], texts = [], arcs = [], hints = [];
+  const ctx = new Proxy({}, {
+    get(target, key) {
+      if (key === 'fillRect') return (...coords) => rects.push({ coords, color: target.fillStyle });
+      if (key === 'bezierCurveTo') return (...args) => curves.push(args);
+      if (key === 'fillText') return (...args) => texts.push(args);
+      if (key === 'arc') return (...args) => arcs.push(args);
+      return () => {};
+    },
+    set(target, key, value) { target[key] = value; return true; },
+  });
+  const instance = fanWind.create({ canvas: { getContext: () => ctx }, setStageLabel() {}, setHint: (hint) => hints.push(hint) });
+  instance.resize({ width: 800, height: 480 });
+  const render = (elapsed = 0) => {
+    rects.length = curves.length = texts.length = arcs.length = 0;
+    instance.render({ elapsed });
+    return structuredClone({ rects, curves, texts, arcs });
+  };
+  return { instance, render, hints };
+}
+
+test('ファンも自動往復ON・50px/sで始まり、往復中も固定した風の向きを提示する', () => {
+  const defaults = Object.fromEntries(fanWind.settings.map((item) => [item.key, item.default]));
+  assert.equal(defaults.autoMove, true); assert.equal(defaults.autoSpeed, 50);
+  const { instance, render } = automaticHarness();
+  const initial = render();
+  assert.deepEqual(initial.rects[1].coords, [50, 210, 60, 60]);
+  assert.equal(initial.texts.length, 0, 'START・GOALを含め、キャンバスに文字を描かない');
+  assert.equal(initial.arcs.length, 4, '2個のファンの外周と中心だけで、ゴールの丸印はない');
+  assert.ok(Math.abs(render(1).rects[1].coords[0] - 100) < 1e-10, '初期速度で1秒間に50px進む');
+  instance.reset(); instance.setSettings({ autoSpeed: 100 }); render();
+  const down = render(2);
+  assert.ok(Math.abs(down.rects[1].coords[0] - 250) < 1e-10);
+  assert.deepEqual(down.rects.slice(1).map((r) => r.color), ['rgb(255,255,255)', 'rgb(255,255,255)', 'rgb(0,0,0)']);
+  const up = render(4.5);
+  assert.ok(Math.abs(up.rects[1].coords[0] - 500) < 1e-10);
+  assert.deepEqual(up.rects.slice(1).map((r) => r.color), ['rgb(255,255,255)', 'rgb(0,0,0)', 'rgb(255,255,255)']);
+  const returnUp = render(9);
+  assert.ok(Math.abs(returnUp.rects[1].coords[0] - 514) < 1e-10, '右端で折り返して戻る');
+  assert.deepEqual(returnUp.rects.slice(1).map((r) => r.color), up.rects.slice(1).map((r) => r.color), '引き返しても同じエリアの風向きは変えない');
+  const returnDown = render(11.5);
+  assert.ok(Math.abs(returnDown.rects[1].coords[0] - 264) < 1e-10);
+  assert.deepEqual(returnDown.rects.slice(1).map((r) => r.color), down.rects.slice(1).map((r) => r.color));
+  for (const state of [down, up, returnUp, returnDown]) {
+    assert.deepEqual(state.curves, initial.curves, '自動往復しても風のイラストは静止');
+    assert.deepEqual(state.texts, []);
+  }
+});
+
+test('ファンの自動往復も手動入力を無視し、一時停止・速度変更・モード切替で位相を保つ', () => {
+  const { instance, render, hints } = automaticHarness();
+  render(); const before = render(.5);
+  instance.pointer({ type: 'move', pointerType: 'mouse', x: 500, y: 20, pointerId: 1 });
+  instance.key({ key: 'ArrowLeft', shiftKey: true });
+  assert.deepEqual(render(.5), before);
+  instance.suspend(); assert.deepEqual(render(.5), before);
+  instance.setSettings({ autoSpeed: 100 }); assert.deepEqual(render(.5), before);
+  assert.ok(Math.abs(render(1).rects[1].coords[0] - 125) < 1e-10);
+  instance.setSettings({ autoMove: false });
+  instance.pointer({ type: 'move', pointerType: 'mouse', x: 296, y: 100, pointerId: 1 });
+  const manual = render(1);
+  assert.deepEqual(manual.rects[1].coords, [266, 70, 60, 60]);
+  instance.setSettings({ autoMove: true });
+  const automatic = render(1);
+  assert.deepEqual(automatic.rects[1].coords, [266, 210, 60, 60], '自動モードでは中央の高さに戻る');
+  assert.equal(automatic.rects[1].color, manual.rects[1].color, 'モード切替で位相を初期化しない');
+  setLanguage('en'); instance.localize();
+  assert.deepEqual(render(1), automatic);
+  assert.match(hints.at(-1), /^Automatic motion/);
+  instance.reset(); instance.setSettings(Object.fromEntries(fanWind.settings.map((item) => [item.key, item.default])));
+  assert.deepEqual(render().rects[1].coords, [50, 210, 60, 60]);
+  assert.ok(Math.abs(render(1).rects[1].coords[0] - 100) < 1e-10);
+  instance.dispose();
 });

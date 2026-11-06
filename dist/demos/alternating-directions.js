@@ -1,5 +1,6 @@
 import { squareLuminances } from './perpetual-square.js';
 import { t } from '../i18n.js';
+import { advanceAutomatic } from './automatic-motion.js';
 
 // カーソル中心が実際に動ける範囲を等幅の4区間に分ける。
 export function directionZoneAt(position) {
@@ -7,14 +8,6 @@ export function directionZoneAt(position) {
 }
 export function relativeRPDirection(position, movement) {
   return directionZoneAt(position) % 2 === 0 ? movement : movement === 'right' ? 'left' : 'right';
-}
-
-// 端では折り返し、1フレームで複数の端を通過しても移動距離を保つ。
-export function advanceAutomatic(position, movement, distance, span) {
-  if (span <= 0 || distance <= 0) return { position, movement };
-  const unfolded = movement === 'right' ? position : 2 - position;
-  const phase = (unfolded + distance / span) % 2;
-  return { position: phase <= 1 ? phase : 2 - phase, movement: phase < 1 ? 'right' : 'left' };
 }
 
 export const alternatingDirections = {
@@ -43,7 +36,7 @@ export const alternatingDirections = {
     let width = 1, height = 1, position = 0, movement = 'right', touchId = null;
     let cycles = 0, lastElapsed = 0;
     const settings = Object.fromEntries(alternatingDirections.settings.map((item) => [item.key, item.default]));
-    const updateHint = () => setHint(t(settings.autoMove ? 'alternating.autoHint' : 'alternating.manualHint'));
+    const updateHint = () => setHint(t(settings.autoMove ? 'motion.autoHint' : 'alternating.manualHint'));
     const cursorSize = () => Math.min(settings.cursorSize, Math.max(16, Math.min(width, height) - 32));
     function bounds() {
       const margin = cursorSize() / 2 + 8;
@@ -115,9 +108,6 @@ export const alternatingDirections = {
         ctx.fillStyle = color(values.center); ctx.fillRect(left, top, size, size);
         ctx.fillStyle = color(values.left); ctx.fillRect(left, top, edge, size);
         ctx.fillStyle = color(values.right); ctx.fillRect(left + size - edge, top, edge, size);
-        ctx.textAlign = 'center'; ctx.fillStyle = '#e4e9df'; ctx.font = `${width < 450 ? 8 : 10}px "Segoe UI", sans-serif`;
-        ctx.fillText('START', min, y + size / 2 + 29); ctx.fillText('GOAL', max, y + size / 2 + 29);
-        ctx.textAlign = 'left';
       },
       dispose() { touchId = null; },
     };

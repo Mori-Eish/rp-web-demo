@@ -1,4 +1,6 @@
 import { squareLuminances } from './perpetual-square.js';
+import { advanceAutomatic } from './automatic-motion.js';
+import { t } from '../i18n.js';
 
 // 判定は四角形の中心。風の方向はユーザー確認済みのRP方向に対応させる。
 export const windZones = Object.freeze([
@@ -14,29 +16,30 @@ export function windZoneAt(x, y, width, height) {
 export const fanWind = {
   id: 'fan-wind',
   title: 'ファンの風を受ける',
-  description: 'ファンの間を通って、四角いカーソルを左から右へ動かしてみてください。',
-  note: 'マウスを動かすと四角形が追従します。タッチはドラッグ、矢印キーでも操作できます。',
+  description: 'ファンの間を、四角いカーソルが一定速度で左右に往復します。',
+  note: '再生すると中央を左右に自動往復します。「自動で往復する」をOFFにすると、マウス、タッチのドラッグ、矢印キーで操作できます。',
   kind: 'WIND EXPLORATION',
   badge: '体験デモ',
   stageLabel: 'WIND FIELD',
   stageClass: 'wind-stage',
-  hint: '左から右へ · マウスを動かす / タッチでドラッグ / 矢印キー',
-  canvasLabel: 'ファンの風デモの操作領域。マウス、タッチのドラッグ、矢印キーで四角形を左から右へ動かします。',
+  hint: '自動往復、またはマウス・タッチ・矢印キーで操作',
+  canvasLabel: 'ファンの風デモの操作領域。自動往復、またはマウス・タッチ・矢印キーで四角形を操作します。',
   thumbnail: 'wind',
   settings: [
+    { key: 'autoMove', label: '自動で往復する', type: 'checkbox', default: true },
+    { key: 'autoSpeed', label: '自動移動の速度', type: 'range', min: 20, max: 300, step: 10, default: 50, unit: ' px/s' },
     { key: 'frequency', label: '周波数', type: 'range', min: .1, max: 4, step: .1, default: 2, unit: ' Hz' },
     { key: 'cursorSize', label: 'カーソルサイズ', type: 'range', min: 24, max: 80, step: 2, default: 60, unit: ' px' },
     { key: 'edgePercent', label: 'エッジ幅', type: 'range', min: .5, max: 20, step: .5, default: 2.5, unit: ' %' },
   ],
-  create({ canvas, setStageLabel }) {
+  create({ canvas, setStageLabel, setHint = () => {} }) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is unavailable');
     let width = 1, height = 1, x = .1, y = .5, touchId = null;
     let settings = Object.fromEntries(fanWind.settings.map((item) => [item.key, item.default]));
-    let cycles = 0, lastElapsed = 0, zone = null;
+    let cycles = 0, lastElapsed = 0, zone = null, movement = 'right';
     const cursorSize = () => Math.min(settings.cursorSize, Math.max(16, Math.min(width, height) - 32));
-    const startX = () => Math.max(.1, (cursorSize() / 2 + 8) / width);
-    const goalX = () => Math.min(.91, 1 - (cursorSize() / 2 + 8) / width);
+    const updateHint = () => setHint(t(settings.autoMove ? 'motion.autoHint' : 'fan.manualHint'));
     function refreshZone() {
       // エリアの内外で共通の点滅位相を保ち、境界ではエッジの有無だけを切り替える。
       zone = windZoneAt(x * width, y * height, width, height);
@@ -48,7 +51,12 @@ export const fanWind = {
       y = Math.max(margin / height, Math.min(1 - margin / height, y));
       refreshZone();
     }
-    function move(px, py) { x = px / width; y = py / height; constrain(); }
+    function move(px, py) {
+      const previousX = x * width;
+      x = px / width; y = py / height; constrain();
+      if (x * width - previousX > .01) movement = 'right';
+      else if (x * width - previousX < -.01) movement = 'left';
+    }
     function fan(cx, cy, radius, angle, direction) {
       ctx.save(); ctx.translate(cx, cy);
       ctx.strokeStyle = '#ced7c4'; ctx.fillStyle = '#535f53'; ctx.lineWidth = 2;
@@ -82,7 +90,6 @@ export const fanWind = {
     function drawField(elapsed) {
       ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, width, height);
       const compact = width < 450, radius = compact ? 16 : 23;
-      ctx.textAlign = 'center';
       for (const field of windZones) {
         const center = (field.left + field.right) * width / 2;
         const sign = field.direction === 'down' ? 1 : -1;
@@ -90,20 +97,24 @@ export const fanWind = {
         staticWind(center, fy, radius, field.direction);
         fan(center, fy, radius, elapsed * 5 * sign, field.direction);
       }
-      ctx.fillStyle = '#e4e9df'; ctx.font = `${compact ? 8 : 10}px "Segoe UI", sans-serif`;
-      ctx.fillText('START', width * startX(), height * .5 + cursorSize() / 2 + 29);
-      ctx.fillText('GOAL', width * goalX(), height * .5 + cursorSize() / 2 + 29);
-      ctx.strokeStyle = '#dce4d087'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(width * goalX(), height * .5, 13, 0, Math.PI * 2); ctx.stroke();
-      ctx.textAlign = 'left';
     }
     return {
+      localize() { updateHint(); },
       resize(view) { width = view.width; height = view.height; constrain(); },
       setSettings(values) {
-        for (const item of fanWind.settings) { const value = Number(values[item.key]); if (Number.isFinite(value)) settings[item.key] = Math.max(item.min, Math.min(item.max, value)); }
-        constrain();
+        const previousMode = settings.autoMove;
+        for (const item of fanWind.settings) {
+          if (item.type === 'checkbox') { if (typeof values[item.key] === 'boolean') settings[item.key] = values[item.key]; }
+          else { const value = Number(values[item.key]); if (Number.isFinite(value)) settings[item.key] = Math.max(item.min, Math.min(item.max, value)); }
+        }
+        if (previousMode !== settings.autoMove) {
+          touchId = null;
+          if (settings.autoMove) y = .5;
+        }
+        constrain(); updateHint();
       },
       pointer(event) {
+        if (settings.autoMove) return;
         if (event.pointerType === 'mouse') {
           if (event.type === 'move' || event.type === 'down') move(event.x, event.y);
         } else {
@@ -113,14 +124,22 @@ export const fanWind = {
         }
       },
       key({ key, shiftKey }) {
+        if (settings.autoMove) return;
         const step = shiftKey ? 24 : 8;
         move(x * width + (key === 'ArrowRight' ? step : key === 'ArrowLeft' ? -step : 0), y * height + (key === 'ArrowDown' ? step : key === 'ArrowUp' ? -step : 0));
       },
       suspend() { touchId = null; },
-      reset() { x = .1; y = .5; touchId = null; cycles = 0; lastElapsed = 0; constrain(); },
+      reset() { x = .1; y = .5; touchId = null; cycles = 0; lastElapsed = 0; movement = 'right'; constrain(); },
       render({ elapsed }) {
-        cycles = (cycles + Math.max(0, elapsed - lastElapsed) * settings.frequency) % 1;
+        const delta = Math.max(0, elapsed - lastElapsed);
+        cycles = (cycles + delta * settings.frequency) % 1;
         lastElapsed = elapsed;
+        if (settings.autoMove) {
+          const min = cursorSize() / 2 + 8, span = Math.max(0, width - 2 * min);
+          const next = advanceAutomatic((x * width - min) / Math.max(1, span), movement, settings.autoSpeed * delta, span);
+          x = (min + next.position * span) / width; y = .5; movement = next.movement;
+          refreshZone();
+        }
         drawField(elapsed);
         const size = cursorSize(), left = x * width - size / 2, top = y * height - size / 2;
         const values = squareLuminances(cycles, zone?.direction || 'up', 1);

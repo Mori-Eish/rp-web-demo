@@ -1,6 +1,7 @@
 import test, { afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { alternatingDirections, directionZoneAt, relativeRPDirection, advanceAutomatic } from '../dist/demos/alternating-directions.js';
+import { alternatingDirections, directionZoneAt, relativeRPDirection } from '../dist/demos/alternating-directions.js';
+import { advanceAutomatic } from '../dist/demos/automatic-motion.js';
 import { fanWind } from '../dist/demos/fan-wind.js';
 import { setLanguage } from '../dist/i18n.js';
 
@@ -8,7 +9,7 @@ afterEach(() => setLanguage('ja'));
 const white = 'rgb(255,255,255)', black = 'rgb(0,0,0)';
 
 test('4等分の境界と同・逆・同・逆の対応を左右の移動で維持する', () => {
-  assert.deepEqual(alternatingDirections.settings.filter((setting) => ['frequency', 'cursorSize', 'edgePercent'].includes(setting.key)), fanWind.settings, 'ファンと同じ標準値と調整範囲');
+  assert.deepEqual(alternatingDirections.settings.filter((setting) => setting.key !== 'guides'), fanWind.settings, 'ファンと同じ標準値と調整範囲');
   assert.deepEqual([-1, 0, .249999, .25, .499999, .5, .749999, .75, 1, 2].map(directionZoneAt), [0, 0, 0, 1, 1, 2, 2, 3, 3, 3]);
   assert.deepEqual([.125, .375, .625, .875].map((u) => relativeRPDirection(u, 'right')), ['right', 'left', 'right', 'left']);
   assert.deepEqual([.125, .375, .625, .875].map((u) => relativeRPDirection(u, 'left')), ['left', 'right', 'left', 'right']);
@@ -91,7 +92,7 @@ test('区間・方向・設定変更で位相を保ち、ガイド・翻訳・�
   assert.equal(afterReverse.rects[1].color, before.rects[1].color, '移動反転時も位相は連続');
   instance.setSettings({ guides: false, cursorSize: 80, edgePercent: 10 });
   const hidden = render(.03125);
-  assert.deepEqual(hidden.texts.map((item) => item[0]), ['START', 'GOAL']); assert.equal(hidden.lines.length, 0);
+  assert.deepEqual(hidden.texts.map((item) => item[0]), []); assert.equal(hidden.lines.length, 0);
   assert.equal(hidden.rects[2].coords[2], 8);
   instance.setSettings({ guides: true });
   setLanguage('en'); const english = render(.03125);
@@ -125,7 +126,7 @@ test('初期状態と全設定リセットでは自動往復ON・50px/s、ガイ
   const { instance, render } = harness({ autoMove: true });
   const initial = render();
   assert.equal(initial.lines.length, 0);
-  assert.deepEqual(initial.texts.map((entry) => entry[0]), ['START', 'GOAL']);
+  assert.deepEqual(initial.texts.map((entry) => entry[0]), []);
   assert.equal(render(1).rects[1].coords[0], 58, '標準の自動移動は1秒で50px進む');
   instance.setSettings({ guides: true, autoMove: true }); render(2);
   instance.reset(); instance.setSettings(defaults);
