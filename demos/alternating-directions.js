@@ -6,23 +6,33 @@ import { advanceAutomatic } from './automatic-motion.js';
 export function directionZoneAt(position) {
   return Math.min(3, Math.floor(Math.max(0, Math.min(1, position)) * 4));
 }
-export function relativeRPDirection(position, movement) {
-  return directionZoneAt(position) % 2 === 0 ? movement : movement === 'right' ? 'left' : 'right';
+export function relativeRPDirection(position, movement, mode = 'alternating') {
+  const reverse = mode === 'opposite' || (mode === 'alternating' && directionZoneAt(position) % 2 === 1);
+  if (!reverse) return movement;
+  return movement === 'right' ? 'left' : 'right';
 }
 
 export const alternatingDirections = {
   id: 'alternating-directions',
   title: '同方向・逆方向のRP',
-  description: 'カーソルを手動または自動で左右に動かし、4エリアで移動方向に対して同方向・逆方向のRPを切り替えます。',
-  note: '左から同方向・逆方向・同方向・逆方向です。「自動で往復する」をONにして再生すると、一定速度で左右に往復します。OFFではマウス、タッチのドラッグ、左右の矢印キーで操作できます。',
+  description: '左右に動くカーソルに、移動方向と同じ向き、または逆向きのRPを提示します。',
+  note: '「RPの提示方向」で切り替えます。「交互」は左から同・逆・同・逆の4エリアです。「同方向のみ」「逆方向のみ」は全域に適用します。手動ではマウス、タッチのドラッグ、左右の矢印キーで操作できます。',
   kind: 'DIRECTION COMPARISON',
   badge: '体験デモ',
   stageLabel: '4 AREAS',
   stageClass: 'wind-stage',
   hint: '手動操作、または「自動で往復する」をONにして再生',
-  canvasLabel: '左右の移動方向に対して、左から同方向・逆方向・同方向・逆方向のRPを提示する4エリア。',
+  canvasLabel: '左右に動くカーソルに、設定に応じて同方向または逆方向のRPを提示する操作領域。',
   thumbnail: 'directions',
   settings: [
+    {
+      key: 'rpMode', label: 'RPの提示方向', type: 'select', default: 'alternating',
+      options: [
+        { value: 'alternating', labelKey: 'alternating.mode.alternating' },
+        { value: 'same', labelKey: 'alternating.mode.same' },
+        { value: 'opposite', labelKey: 'alternating.mode.opposite' },
+      ],
+    },
     { key: 'autoMove', label: '自動で往復する', type: 'checkbox', default: true },
     { key: 'autoSpeed', label: '自動移動の速度', type: 'range', min: 20, max: 300, step: 10, default: 50, unit: ' px/s' },
     { key: 'frequency', label: '周波数', type: 'range', min: .1, max: 4, step: .1, default: 2, unit: ' Hz' },
@@ -36,7 +46,11 @@ export const alternatingDirections = {
     let width = 1, height = 1, position = 0, movement = 'right', touchId = null;
     let cycles = 0, lastElapsed = 0;
     const settings = Object.fromEntries(alternatingDirections.settings.map((item) => [item.key, item.default]));
-    const updateHint = () => setHint(t(settings.autoMove ? 'motion.autoHint' : 'alternating.manualHint'));
+    function updateLabels() {
+      const modeLabel = settings.rpMode === 'alternating' ? '4 AREAS' : t(`alternating.mode.${settings.rpMode}`);
+      setStageLabel?.(`${modeLabel} / ${settings.frequency.toFixed(1)} Hz`);
+      setHint(t(settings.autoMove ? 'motion.autoHint' : 'alternating.manualHint'));
+    }
     const cursorSize = () => Math.min(settings.cursorSize, Math.max(16, Math.min(width, height) - 32));
     function bounds() {
       const margin = cursorSize() / 2 + 8;
@@ -52,17 +66,18 @@ export const alternatingDirections = {
       position = next;
     }
     return {
-      localize() { updateHint(); },
+      localize() { updateLabels(); },
       resize(view) { width = Math.max(1, view.width); height = Math.max(1, view.height); },
       setSettings(values) {
         const previousMode = settings.autoMove;
         for (const item of alternatingDirections.settings) {
-          if (item.type === 'checkbox') { if (typeof values[item.key] === 'boolean') settings[item.key] = values[item.key]; }
+          if (item.type === 'select') {
+            if (item.options.some(({ value }) => value === values[item.key])) settings[item.key] = values[item.key];
+          } else if (item.type === 'checkbox') { if (typeof values[item.key] === 'boolean') settings[item.key] = values[item.key]; }
           else { const value = Number(values[item.key]); if (Number.isFinite(value)) settings[item.key] = Math.max(item.min, Math.min(item.max, value)); }
         }
         if (previousMode !== settings.autoMove) touchId = null;
-        setStageLabel?.(`4 AREAS / ${settings.frequency.toFixed(1)} Hz`);
-        updateHint();
+        updateLabels();
       },
       pointer(event) {
         if (settings.autoMove) return;
@@ -89,7 +104,7 @@ export const alternatingDirections = {
         ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, width, height);
         const size = cursorSize(), { min, max } = bounds(), span = max - min;
         if (settings.autoMove) ({ position, movement } = advanceAutomatic(position, movement, settings.autoSpeed * delta, span));
-        if (settings.guides) {
+        if (settings.guides && settings.rpMode === 'alternating') {
           ctx.strokeStyle = '#a8ada5'; ctx.lineWidth = 1; ctx.beginPath();
           for (let edge = 1; edge < 4; edge++) {
             const x = min + span * edge / 4;
@@ -100,9 +115,12 @@ export const alternatingDirections = {
           for (let index = 0; index < 4; index++) {
             ctx.fillText(`${index + 1} · ${t(index % 2 === 0 ? 'zones.same' : 'zones.opposite')}`, min + span * (index + .5) / 4, 64);
           }
+        } else if (settings.guides) {
+          ctx.textAlign = 'center'; ctx.fillStyle = '#30382e'; ctx.font = '10px "Segoe UI", sans-serif';
+          ctx.fillText(t(`alternating.mode.${settings.rpMode}`), width / 2, 64);
         }
         const x = min + position * span, y = height / 2;
-        const values = squareLuminances(cycles, relativeRPDirection(position, movement), 1);
+        const values = squareLuminances(cycles, relativeRPDirection(position, movement, settings.rpMode), 1);
         const color = (value) => { const byte = Math.round(value * 255); return `rgb(${byte},${byte},${byte})`; };
         const left = x - size / 2, top = y - size / 2, edge = size * settings.edgePercent / 100;
         ctx.fillStyle = color(values.center); ctx.fillRect(left, top, size, size);
