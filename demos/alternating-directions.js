@@ -6,9 +6,15 @@ import { advanceAutomatic } from './automatic-motion.js';
 export function directionZoneAt(position) {
   return Math.min(3, Math.floor(Math.max(0, Math.min(1, position)) * 4));
 }
+function rpAtZone(index, mode) {
+  const relation = index % 2 === 0 ? 'same' : 'opposite';
+  return mode === 'alternating' || mode === relation ? relation : 'none';
+}
+
 export function relativeRPDirection(position, movement, mode = 'alternating') {
-  const reverse = mode === 'opposite' || (mode === 'alternating' && directionZoneAt(position) % 2 === 1);
-  if (!reverse) return movement;
+  const relation = rpAtZone(directionZoneAt(position), mode);
+  if (relation === 'none') return null;
+  if (relation === 'same') return movement;
   return movement === 'right' ? 'left' : 'right';
 }
 
@@ -16,13 +22,13 @@ export const alternatingDirections = {
   id: 'alternating-directions',
   title: '同方向・逆方向のRP',
   description: '左右に動くカーソルに、移動方向と同じ向き、または逆向きのRPを提示します。',
-  note: '「RPの提示方向」で切り替えます。「交互」は左から同・逆・同・逆の4エリアです。「同方向のみ」「逆方向のみ」は全域に適用します。手動ではマウス、タッチのドラッグ、左右の矢印キーで操作できます。',
+  note: '「RPの提示方向」で切り替えます。「交互」は左から同・逆・同・逆です。「同方向のみ」は第1・第3エリア、「逆方向のみ」は第2・第4エリアでRPを提示します。残りのエリアではカーソル全体が一様に点滅します。手動ではマウス、タッチのドラッグ、左右の矢印キーで操作できます。',
   kind: 'DIRECTION COMPARISON',
   badge: '体験デモ',
   stageLabel: '4 AREAS',
   stageClass: 'wind-stage',
   hint: '手動操作、または「自動で往復する」をONにして再生',
-  canvasLabel: '左右に動くカーソルに、設定に応じて同方向または逆方向のRPを提示する操作領域。',
+  canvasLabel: '左右に動くカーソルに、4エリアで同方向のRP、逆方向のRP、または一様な点滅を提示する操作領域。',
   thumbnail: 'directions',
   settings: [
     {
@@ -104,7 +110,7 @@ export const alternatingDirections = {
         ctx.fillStyle = '#808080'; ctx.fillRect(0, 0, width, height);
         const size = cursorSize(), { min, max } = bounds(), span = max - min;
         if (settings.autoMove) ({ position, movement } = advanceAutomatic(position, movement, settings.autoSpeed * delta, span));
-        if (settings.guides && settings.rpMode === 'alternating') {
+        if (settings.guides) {
           ctx.strokeStyle = '#a8ada5'; ctx.lineWidth = 1; ctx.beginPath();
           for (let edge = 1; edge < 4; edge++) {
             const x = min + span * edge / 4;
@@ -113,19 +119,19 @@ export const alternatingDirections = {
           ctx.stroke();
           ctx.textAlign = 'center'; ctx.fillStyle = '#30382e'; ctx.font = `${width < 450 ? 8 : 10}px "Segoe UI", sans-serif`;
           for (let index = 0; index < 4; index++) {
-            ctx.fillText(`${index + 1} · ${t(index % 2 === 0 ? 'zones.same' : 'zones.opposite')}`, min + span * (index + .5) / 4, 64);
+            ctx.fillText(`${index + 1} · ${t(`zones.${rpAtZone(index, settings.rpMode)}`)}`, min + span * (index + .5) / 4, 64);
           }
-        } else if (settings.guides) {
-          ctx.textAlign = 'center'; ctx.fillStyle = '#30382e'; ctx.font = '10px "Segoe UI", sans-serif';
-          ctx.fillText(t(`alternating.mode.${settings.rpMode}`), width / 2, 64);
         }
         const x = min + position * span, y = height / 2;
-        const values = squareLuminances(cycles, relativeRPDirection(position, movement, settings.rpMode), 1);
+        const direction = relativeRPDirection(position, movement, settings.rpMode);
+        const values = squareLuminances(cycles, direction ?? movement, 1);
         const color = (value) => { const byte = Math.round(value * 255); return `rgb(${byte},${byte},${byte})`; };
         const left = x - size / 2, top = y - size / 2, edge = size * settings.edgePercent / 100;
         ctx.fillStyle = color(values.center); ctx.fillRect(left, top, size, size);
-        ctx.fillStyle = color(values.left); ctx.fillRect(left, top, edge, size);
-        ctx.fillStyle = color(values.right); ctx.fillRect(left + size - edge, top, edge, size);
+        if (direction) {
+          ctx.fillStyle = color(values.left); ctx.fillRect(left, top, edge, size);
+          ctx.fillStyle = color(values.right); ctx.fillRect(left + size - edge, top, edge, size);
+        }
       },
       dispose() { touchId = null; },
     };
