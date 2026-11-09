@@ -186,7 +186,7 @@ function openDemo(id, trigger) {
     const instance = demo.create({ canvas, overlay: $('demo-overlay'), start: () => setRunning(true), invalidate: render, setHint: (text) => { if (active?.running) $('stage-help').textContent = text; }, setStageLabel: (text) => { $('stage-label').textContent = text; } });
     const events = new AbortController(), observer = new ResizeObserver(resize);
     active = { instance, events, observer, values, demo, running: false, started: false, elapsed: 0, lastTime: null, raf: 0 };
-    resize(); instance.setSettings({ ...values }); setRunning(false); observer.observe(stage);
+    resize(); instance.setSettings({ ...values }); observer.observe(stage);
     for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture']) {
       canvas.addEventListener(type, (event) => {
         if (!active?.running || (event.type === 'pointerdown' && event.button !== 0)) return;
@@ -203,6 +203,7 @@ function openDemo(id, trigger) {
     history.replaceState(null, '', `#demo/${demo.id}`);
     $('toggle-play').disabled = false; $('reset-demo').disabled = false;
     $('toggle-play').focus();
+    setRunning(true);
   } catch (error) {
     cleanup(); failed = true; messageKey = 'player.loadError'; $('player-message').textContent = t(messageKey);
     $('stage-status').textContent = t('player.errorStatus'); $('toggle-play').disabled = true; $('reset-demo').disabled = true;

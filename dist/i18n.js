@@ -85,7 +85,7 @@ const englishDemos = {
     title: 'Same and opposite RP', badge: 'Interactive demo',
     description: 'See RP in the same or opposite direction as the cursor moves left and right.',
     note: 'Choose an RP direction. Alternating uses four areas from left to right: same, opposite, same, opposite. Same direction only presents RP in areas 1 and 3. Opposite direction only presents RP in areas 2 and 4. In the other areas, the entire cursor blinks uniformly. For manual control, use the mouse, touch and drag, or the left and right arrow keys.',
-    hint: 'Move manually, or enable Automatic movement and press Start',
+    hint: 'Move manually, or enable Automatic movement',
     canvasLabel: 'Four areas present same-direction RP, opposite-direction RP, or uniform blinking as the cursor moves horizontally.',
   },
   'perpetual-square': {
@@ -98,7 +98,7 @@ const englishDemos = {
   'fan-wind': {
     title: 'Fan wind', badge: 'Interactive demo',
     description: 'The square cursor moves back and forth between the fans at constant speed.',
-    note: 'Press Start for automatic horizontal motion. Disable Automatic movement to use the mouse, touch and drag, or arrow keys.',
+    note: 'The cursor moves horizontally on its own when the demo opens. Disable Automatic movement to use the mouse, touch and drag, or arrow keys.',
     hint: 'Automatic motion, or use the mouse, touch and drag, or arrow keys',
     canvasLabel: 'Fan wind interaction area. Move the square automatically, or use the mouse, touch and drag, or arrow keys.',
   },

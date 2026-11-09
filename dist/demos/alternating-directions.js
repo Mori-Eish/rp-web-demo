@@ -27,7 +27,7 @@ export const alternatingDirections = {
   badge: '体験デモ',
   stageLabel: '4 AREAS',
   stageClass: 'wind-stage',
-  hint: '手動操作、または「自動で往復する」をONにして再生',
+  hint: '手動で操作するか、「自動で往復する」をONにします。',
   canvasLabel: '左右に動くカーソルに、4エリアで同方向のRP、逆方向のRP、または一様な点滅を提示する操作領域。',
   thumbnail: 'directions',
   settings: [
