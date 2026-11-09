@@ -178,28 +178,41 @@ test('自動モードの一時停止・再開・速度変更・手動切替で�
   assert.equal(render(1).rects[1].coords[0], 330);
 });
 
-test('同方向のみ・逆方向のみは全区間に適用し、切替時に位置と位相を維持する', () => {
+test('片方向モードは対応する区間だけRPを提示し、残りは位相を保って一様に点滅する', () => {
   const { instance, render, mouse } = harness({ guides: true });
-  const phase = .03125;
+  const positions = [128.5, 309.5, 490.5, 671.5];
+  const time = .03125;
   const colors = (state) => state.rects.slice(1).map(({ color }) => color);
-  mouse(300);
-  const alternating = render(phase);
-  instance.setSettings({ rpMode: 'opposite' });
-  const opposite = render(phase);
-  assert.deepEqual(opposite.rects, alternating.rects, '第2区間の右向き移動はどちらも逆方向');
-  assert.equal(opposite.lines.length, 0);
-  assert.deepEqual(opposite.texts.map(([label]) => label), ['逆方向のみ']);
 
+  mouse(300);
+  const alternating = render(time);
   instance.setSettings({ rpMode: 'same' });
-  const same = render(phase);
-  assert.deepEqual(same.rects[1], opposite.rects[1], '切替時の中心の位置と輝度は同じ');
-  assert.deepEqual(colors(same), [colors(opposite)[0], colors(opposite)[2], colors(opposite)[1]]);
-  mouse(500); assert.deepEqual(colors(render(phase)), colors(same), '区間をまたいでも同方向');
-  mouse(120); assert.deepEqual(colors(render(phase)), colors(opposite), '左向き移動でも同方向');
-  instance.setSettings({ rpMode: 'opposite' });
-  assert.deepEqual(colors(render(phase)), colors(same), '左向き移動に対して逆方向');
-  instance.setSettings({ rpMode: 'alternating' });
-  const restored = render(phase);
-  assert.deepEqual(colors(restored), colors(opposite));
-  assert.equal(restored.lines.length, 6);
+  const uniform = render(time);
+  assert.deepEqual(uniform.rects, alternating.rects.slice(0, 2), '切替時にカーソルの位置と輝度を維持する');
+  assert.deepEqual(uniform.lines, alternating.lines, '区間の境界は同じ');
+  assert.notEqual(render(.15625).rects[1].color, uniform.rects[1].color, 'RPのない区間でも点滅する');
+
+  for (const [mode, labels, rightward, leftward] of [
+    ['same', ['1 · 同方向', '2 · なし', '3 · 同方向', '4 · なし'],
+      [[white, white, black], [white], [white, white, black], [white]],
+      [[white, black, white], [white], [white, black, white], [white]]],
+    ['opposite', ['1 · なし', '2 · 逆方向', '3 · なし', '4 · 逆方向'],
+      [[white], [white, black, white], [white], [white, black, white]],
+      [[white], [white, white, black], [white], [white, white, black]]],
+  ]) {
+    instance.reset();
+    instance.setSettings({ rpMode: mode });
+    positions.forEach((x, index) => {
+      mouse(x);
+      const state = render();
+      assert.deepEqual(colors(state), rightward[index]);
+      assert.deepEqual(state.lines, alternating.lines);
+      assert.deepEqual(state.texts.map(([label]) => label), labels);
+    });
+    mouse(750);
+    positions.slice().reverse().forEach((x, index) => {
+      mouse(x);
+      assert.deepEqual(colors(render()), leftward[3 - index]);
+    });
+  }
 });
