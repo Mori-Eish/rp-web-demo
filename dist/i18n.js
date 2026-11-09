@@ -31,7 +31,7 @@ export const messages = {
     'setting.autoMove': '自動で往復する', 'setting.autoSpeed': '自動移動の速度',
     'motion.autoHint': '一定速度で自動往復 · 一時停止で止められます',
     'fan.manualHint': 'マウスを動かす / タッチでドラッグ / 矢印キー',
-    'setting.rpMode': 'RPの提示方向',
+    'setting.rpMode': 'RPの提示方向', 'setting.liftingRP': 'AとCのRPを表示する',
     'alternating.mode.alternating': '交互', 'alternating.mode.same': '同方向のみ', 'alternating.mode.opposite': '逆方向のみ',
     'alternating.manualHint': '左右に動かす · マウス / タッチでドラッグ / 左右の矢印キー',
   },
@@ -67,13 +67,20 @@ export const messages = {
     'setting.autoMove': 'Automatic movement', 'setting.autoSpeed': 'Automatic speed',
     'motion.autoHint': 'Automatic motion at constant speed · Select Pause to stop',
     'fan.manualHint': 'Move the mouse / Touch and drag / Arrow keys',
-    'setting.rpMode': 'RP direction',
+    'setting.rpMode': 'RP direction', 'setting.liftingRP': 'Show RP on A and C',
     'alternating.mode.alternating': 'Alternating', 'alternating.mode.same': 'Same direction only', 'alternating.mode.opposite': 'Opposite direction only',
     'alternating.manualHint': 'Move left and right · Mouse / Touch and drag / Left and right arrow keys',
   },
 };
 
 const englishDemos = {
+  'lifting-weight': {
+    title: 'Lift the squares', badge: 'Prototype',
+    description: 'Lift each of the three squares off the ground and compare how it feels.',
+    note: 'From left to right, A displays upward RP, B blinks uniformly, and C displays downward RP. All three blink at the same rate, follow drag input the same way, and fall under the same gravity on release.',
+    hint: 'Drag a square upward, then let go.',
+    canvasLabel: 'Squares A, B, and C rest on the ground. Drag any square upward, or choose with Left and Right and lift with Up.',
+  },
   'alternating-directions': {
     title: 'Same and opposite RP', badge: 'Interactive demo',
     description: 'See RP in the same or opposite direction as the cursor moves left and right.',
