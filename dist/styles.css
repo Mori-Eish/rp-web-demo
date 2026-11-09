@@ -19,3 +19,79 @@ dialog{border:1px solid #ccd3c6;padding:0;max-width:1120px;width:calc(100% - 64p
 .language-toggle{min-height:34px;padding:6px 10px;border:1px solid var(--line);border-radius:3px;background:transparent;color:var(--ink);font-size:12px;white-space:nowrap}.language-toggle:hover{background:#e9ece3}.site-header{gap:14px}.site-header>.language-toggle{margin-left:auto}.player-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}.player-header>div:first-child{min-width:0}.check-setting>input{flex-shrink:0}@media(max-width:620px){.player-actions{gap:7px}.language-toggle{font-size:11px;padding-inline:8px}}
 
 .thumb-directions{background:#e3e7dd}.directions-thumb{display:grid;grid-template-columns:repeat(4,1fr);width:100%;height:72px;align-items:center;color:#627958;font-size:22px}.directions-thumb>span{text-align:center;border-right:1px solid #c3ccbb;line-height:72px}.directions-thumb>span:last-child{border-right:0}@media(max-width:620px){.directions-thumb{font-size:16px}}
+
+@media (width > 850px) {
+  .demo-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+
+  .thumbnail {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 7;
+  }
+
+  .card-bottom {
+    align-self: end;
+    padding-bottom: 18px;
+  }
+
+  .rp-thumb-field {
+    width: 128px;
+    height: 128px;
+  }
+
+  .rp-thumb-field > span {
+    width: 72px;
+    height: 72px;
+    border-width: 4px;
+  }
+
+  .rp-thumb-arrow {
+    left: calc(50% + 82px);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 28px;
+  }
+
+  .directions-thumb {
+    width: 80%;
+    height: auto;
+    font-size: 30px;
+  }
+
+  .directions-thumb > span {
+    line-height: 88px;
+  }
+
+  .wind-thumb-zone {
+    top: 16%;
+    bottom: 16%;
+    transform: translateX(-50%);
+    font-size: 36px;
+  }
+
+  .wind-thumb-zone > span {
+    font-size: 32px;
+  }
+
+  .wind-thumb-zone.zone-down {
+    left: 44%;
+  }
+
+  .wind-thumb-cursor {
+    left: 23%;
+  }
+
+  .bar-thumb {
+    width: 16px;
+    height: 136px;
+  }
+
+  .thumb-input .thumb-pointer {
+    top: 50%;
+  }
+}
