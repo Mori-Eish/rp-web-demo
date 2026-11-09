@@ -1,7 +1,7 @@
 export const messages = {
   ja: {
     'site.title': 'RP / PH Webデモ', 'site.home': 'RP / PH Webデモ ホーム',
-    'site.description': 'Reversed Phi (RP) を用いた Pseudo-Haptics (PH) のブラウザデモと入力確認サンプル。',
+    'site.description': 'Reversed Phi (RP) を用いた Pseudo-Haptics (PH) のブラウザデモ。',
     'collection.title': 'デモ一覧', 'collection.count': '{count}件', 'collection.skip': 'デモ一覧へスキップ',
     'collection.open': '開く', 'collection.openDemo': '{title}を開く',
     'collection.upcoming': '準備中', 'collection.next': '次の体験のために',
@@ -35,7 +35,7 @@ export const messages = {
   },
   en: {
     'site.title': 'RP / PH Web Demos', 'site.home': 'RP / PH Web Demos home',
-    'site.description': 'Browser demos of Pseudo-Haptics (PH) using Reversed Phi (RP), plus an input sandbox.',
+    'site.description': 'Browser demos of Pseudo-Haptics (PH) using Reversed Phi (RP).',
     'collection.title': 'Demos', 'collection.count': '{count} demos', 'collection.skip': 'Skip to demos',
     'collection.open': 'Open', 'collection.openDemo': 'Open {title}',
     'collection.upcoming': 'Coming soon', 'collection.next': 'Upcoming demo',

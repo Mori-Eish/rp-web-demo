@@ -5,5 +5,11 @@ import { bendingBar } from './bending-bar.js';
 import { alternatingDirections } from './alternating-directions.js';
 
 // 公開可能なデモだけをここに登録。並び順が一覧とデモ番号に反映される。
-export const demos = [perpetualSquare, alternatingDirections, fanWind, bendingBar, inputSandbox];
+export const demos = [perpetualSquare, alternatingDirections, fanWind, bendingBar];
+
+const hostname = globalThis.location?.hostname;
+if (hostname === '127.0.0.1' || hostname === 'localhost') {
+  demos.push(inputSandbox);
+}
+
 export const plannedSlots = 0;
