@@ -95,3 +95,13 @@ dialog{border:1px solid #ccd3c6;padding:0;max-width:1120px;width:calc(100% - 64p
     top: 50%;
   }
 }
+
+.setting select {
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: #fafaf6;
+  color: var(--ink);
+}

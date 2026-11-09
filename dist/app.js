@@ -110,11 +110,24 @@ function settingsFor(demo, initialValues = {}) {
   const values = {}, container = $('settings'); container.replaceChildren();
   for (const setting of demo.settings) {
     values[setting.key] = initialValues[setting.key] ?? setting.default;
-    const label = document.createElement(setting.type === 'checkbox' ? 'label' : 'div'); label.className = 'setting';
-    const input = document.createElement('input'); input.type = setting.type; input.name = setting.key;
+    const isSelect = setting.type === 'select';
+    const label = document.createElement(setting.type === 'range' ? 'div' : 'label'); label.className = 'setting';
+    const input = document.createElement(isSelect ? 'select' : 'input');
+    if (!isSelect) input.type = setting.type;
+    input.name = setting.key;
     if (setting.type === 'checkbox') {
       label.classList.add('check-setting'); input.checked = values[setting.key];
       label.append(input, document.createTextNode(setting.label));
+    } else if (isSelect) {
+      const name = document.createElement('span'); name.className = 'setting-label'; name.textContent = setting.label;
+      for (const { value, labelKey } of setting.options) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = t(labelKey);
+        input.append(option);
+      }
+      input.value = values[setting.key];
+      label.append(name, input);
     } else {
       const row = document.createElement('span'); row.className = 'setting-label';
       const name = document.createElement('label'); name.textContent = setting.label;
@@ -138,8 +151,10 @@ function settingsFor(demo, initialValues = {}) {
       row.append(name, output); label.append(row, track, reset);
       input.addEventListener('input', () => { output.textContent = input.value + (setting.unit || ''); });
     }
-    input.addEventListener('input', () => {
-      values[setting.key] = setting.type === 'checkbox' ? input.checked : Number(input.value);
+    input.addEventListener(isSelect ? 'change' : 'input', () => {
+      if (setting.type === 'checkbox') values[setting.key] = input.checked;
+      else if (isSelect) values[setting.key] = input.value;
+      else values[setting.key] = Number(input.value);
       if (active) { active.instance.setSettings({ ...values }); render(); }
     });
     container.append(label);

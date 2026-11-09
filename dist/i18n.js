@@ -31,6 +31,8 @@ export const messages = {
     'setting.autoMove': '自動で往復する', 'setting.autoSpeed': '自動移動の速度',
     'motion.autoHint': '一定速度で自動往復 · 一時停止で止められます',
     'fan.manualHint': 'マウスを動かす / タッチでドラッグ / 矢印キー',
+    'setting.rpMode': 'RPの提示方向',
+    'alternating.mode.alternating': '交互', 'alternating.mode.same': '同方向のみ', 'alternating.mode.opposite': '逆方向のみ',
     'alternating.manualHint': '左右に動かす · マウス / タッチでドラッグ / 左右の矢印キー',
   },
   en: {
@@ -65,6 +67,8 @@ export const messages = {
     'setting.autoMove': 'Automatic movement', 'setting.autoSpeed': 'Automatic speed',
     'motion.autoHint': 'Automatic motion at constant speed · Select Pause to stop',
     'fan.manualHint': 'Move the mouse / Touch and drag / Arrow keys',
+    'setting.rpMode': 'RP direction',
+    'alternating.mode.alternating': 'Alternating', 'alternating.mode.same': 'Same direction only', 'alternating.mode.opposite': 'Opposite direction only',
     'alternating.manualHint': 'Move left and right · Mouse / Touch and drag / Left and right arrow keys',
   },
 };
@@ -72,10 +76,10 @@ export const messages = {
 const englishDemos = {
   'alternating-directions': {
     title: 'Same and opposite RP', badge: 'Interactive demo',
-    description: 'Move the cursor manually or automatically. Four areas alternate between RP in the same and opposite directions to its movement.',
-    note: 'From left to right: same, opposite, same, opposite. Enable Automatic movement and press Start to move back and forth at constant speed. With it off, use the mouse, touch and drag, or left and right arrow keys.',
+    description: 'See RP in the same or opposite direction as the cursor moves left and right.',
+    note: 'Choose an RP direction. Alternating uses four areas from left to right: same, opposite, same, opposite. Either single direction applies throughout. For manual control, use the mouse, touch and drag, or the left and right arrow keys.',
     hint: 'Move manually, or enable Automatic movement and press Start',
-    canvasLabel: 'Four areas present RP relative to horizontal cursor movement: same, opposite, same, opposite from left to right.',
+    canvasLabel: 'Horizontal cursor movement with RP in the same or opposite direction, depending on the selected setting.',
   },
   'perpetual-square': {
     title: 'RP motion', badge: 'Visual illusion',

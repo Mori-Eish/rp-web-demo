@@ -9,7 +9,7 @@ afterEach(() => setLanguage('ja'));
 const white = 'rgb(255,255,255)', black = 'rgb(0,0,0)';
 
 test('4等分の境界と同・逆・同・逆の対応を左右の移動で維持する', () => {
-  assert.deepEqual(alternatingDirections.settings.filter((setting) => setting.key !== 'guides'), fanWind.settings, 'ファンと同じ標準値と調整範囲');
+  assert.deepEqual(alternatingDirections.settings.filter((setting) => !['guides', 'rpMode'].includes(setting.key)), fanWind.settings, 'ファンと同じ標準値と調整範囲');
   assert.deepEqual([-1, 0, .249999, .25, .499999, .5, .749999, .75, 1, 2].map(directionZoneAt), [0, 0, 0, 1, 1, 2, 2, 3, 3, 3]);
   assert.deepEqual([.125, .375, .625, .875].map((u) => relativeRPDirection(u, 'right')), ['right', 'left', 'right', 'left']);
   assert.deepEqual([.125, .375, .625, .875].map((u) => relativeRPDirection(u, 'left')), ['left', 'right', 'left', 'right']);
@@ -122,6 +122,7 @@ test('タッチ・ペンの識別と解除、リセットに対応する', () =>
 
 test('初期状態と全設定リセットでは自動往復ON・50px/s、ガイド非表示にする', () => {
   const defaults = Object.fromEntries(alternatingDirections.settings.map((setting) => [setting.key, setting.default]));
+  assert.equal(defaults.rpMode, 'alternating');
   assert.equal(defaults.guides, false); assert.equal(defaults.autoMove, true); assert.equal(defaults.autoSpeed, 50);
   const { instance, render } = harness({ autoMove: true });
   const initial = render();
@@ -175,4 +176,30 @@ test('自動モードの一時停止・再開・速度変更・手動切替で�
   const beforeAuto = render(.75);
   instance.setSettings({ autoMove: true }); assert.deepEqual(render(.75), beforeAuto);
   assert.equal(render(1).rects[1].coords[0], 330);
+});
+
+test('同方向のみ・逆方向のみは全区間に適用し、切替時に位置と位相を維持する', () => {
+  const { instance, render, mouse } = harness({ guides: true });
+  const phase = .03125;
+  const colors = (state) => state.rects.slice(1).map(({ color }) => color);
+  mouse(300);
+  const alternating = render(phase);
+  instance.setSettings({ rpMode: 'opposite' });
+  const opposite = render(phase);
+  assert.deepEqual(opposite.rects, alternating.rects, '第2区間の右向き移動はどちらも逆方向');
+  assert.equal(opposite.lines.length, 0);
+  assert.deepEqual(opposite.texts.map(([label]) => label), ['逆方向のみ']);
+
+  instance.setSettings({ rpMode: 'same' });
+  const same = render(phase);
+  assert.deepEqual(same.rects[1], opposite.rects[1], '切替時の中心の位置と輝度は同じ');
+  assert.deepEqual(colors(same), [colors(opposite)[0], colors(opposite)[2], colors(opposite)[1]]);
+  mouse(500); assert.deepEqual(colors(render(phase)), colors(same), '区間をまたいでも同方向');
+  mouse(120); assert.deepEqual(colors(render(phase)), colors(opposite), '左向き移動でも同方向');
+  instance.setSettings({ rpMode: 'opposite' });
+  assert.deepEqual(colors(render(phase)), colors(same), '左向き移動に対して逆方向');
+  instance.setSettings({ rpMode: 'alternating' });
+  const restored = render(phase);
+  assert.deepEqual(colors(restored), colors(opposite));
+  assert.equal(restored.lines.length, 6);
 });
