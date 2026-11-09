@@ -105,3 +105,33 @@ dialog{border:1px solid #ccd3c6;padding:0;max-width:1120px;width:calc(100% - 64p
   background: #fafaf6;
   color: var(--ink);
 }
+
+.thumb-lifting {
+  grid-template-columns: repeat(3, auto);
+  place-content: center;
+  align-items: end;
+  gap: 8px;
+  background: linear-gradient(to bottom, #808080 63%, #50564d 63%);
+}
+
+.thumb-lifting > span {
+  width: 18px;
+  aspect-ratio: 1;
+  background: #deded8;
+  transform: translateY(-12px);
+}
+
+.thumb-lifting > span:last-child {
+  transform: translateY(-28px);
+}
+
+.lift-stage .stage-topline {
+  color: #191b18;
+}
+
+.lift-stage .stage-help {
+  right: 12px;
+  left: 12px;
+  color: #f1f1e9;
+  text-align: center;
+}

@@ -9,9 +9,9 @@ let active = null, opener = null, messageKey = null, failed = false;
 
 function thumbnail(kind, index) {
   const el = document.createElement('div');
-  el.className = `thumbnail ${kind === 'directions' ? 'thumb-directions' : kind === 'bar' ? 'thumb-bar' : kind === 'wind' ? 'thumb-wind' : kind === 'rp' ? 'thumb-rp' : kind === 'input' ? 'thumb-input' : 'thumb-placeholder' + (index % 2 === 0 ? ' soft' : '')}`;
+  el.className = `thumbnail ${kind === 'lifting' ? 'thumb-lifting' : kind === 'directions' ? 'thumb-directions' : kind === 'bar' ? 'thumb-bar' : kind === 'wind' ? 'thumb-wind' : kind === 'rp' ? 'thumb-rp' : kind === 'input' ? 'thumb-input' : 'thumb-placeholder' + (index % 2 === 0 ? ' soft' : '')}`;
   el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = kind === 'directions' ? '<span class="directions-thumb"><span>→</span><span>←</span><span>→</span><span>←</span></span>' : kind === 'bar' ? '<span class="bar-thumb"></span><span class="bar-thumb-pointer"></span>' : kind === 'wind' ? '<span class="wind-thumb-zone zone-down">✣<span>↓</span></span><span class="wind-thumb-zone zone-up"><span>↑</span>✣</span><span class="wind-thumb-cursor"></span>' : kind === 'rp' ? '<span class="rp-thumb-field"><span></span></span><span class="rp-thumb-arrow">↑</span>' : kind === 'input' ? '<span class="thumb-square"></span><span class="thumb-pointer"></span>' : '<span class="placeholder-shape">+</span>';
+  el.innerHTML = kind === 'lifting' ? '<span></span><span></span><span></span>' : kind === 'directions' ? '<span class="directions-thumb"><span>→</span><span>←</span><span>→</span><span>←</span></span>' : kind === 'bar' ? '<span class="bar-thumb"></span><span class="bar-thumb-pointer"></span>' : kind === 'wind' ? '<span class="wind-thumb-zone zone-down">✣<span>↓</span></span><span class="wind-thumb-zone zone-up"><span>↑</span>✣</span><span class="wind-thumb-cursor"></span>' : kind === 'rp' ? '<span class="rp-thumb-field"><span></span></span><span class="rp-thumb-arrow">↑</span>' : kind === 'input' ? '<span class="thumb-square"></span><span class="thumb-pointer"></span>' : '<span class="placeholder-shape">+</span>';
   return el;
 }
 function card(demo, index) {
@@ -177,6 +177,7 @@ function openDemo(id, trigger) {
   stage.classList.toggle('rp-stage', demo.id === 'perpetual-square');
   stage.classList.toggle('wind-stage', demo.stageClass === 'wind-stage');
   stage.classList.toggle('bar-stage', demo.stageClass === 'bar-stage');
+  stage.classList.toggle('lift-stage', demo.stageClass === 'lift-stage');
   $('settings-heading').hidden = demo.settings.length === 0;
   $('demo-overlay').replaceChildren();
   const values = settingsFor(localizeDemo(demo));
