@@ -1,6 +1,6 @@
 import { squareLuminances } from './perpetual-square.js';
 
-const gravity = 900;
+const gravity = 650;
 const grayscale = (value) => {
   const channel = Math.round(value * 255);
   return `rgb(${channel}, ${channel}, ${channel})`;
