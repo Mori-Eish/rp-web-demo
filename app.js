@@ -200,6 +200,23 @@ $('reset-demo').addEventListener('click', () => {
   active.instance.setSettings({ ...active.values }); setRunning(false); messageKey = null; $('player-message').textContent = ''; render();
 });
 $('close-player').addEventListener('click', () => player.close());
+function isPlayerBackdrop(event) {
+  if (event.target !== player || document.fullscreenElement) return false;
+  const { left, right, top, bottom } = player.getBoundingClientRect();
+  return event.clientX < left || event.clientX >= right || event.clientY < top || event.clientY >= bottom;
+}
+
+let backdropPressed = false;
+player.addEventListener('pointerdown', (event) => {
+  backdropPressed = event.isPrimary && event.button === 0 && isPlayerBackdrop(event);
+});
+player.addEventListener('pointercancel', () => { backdropPressed = false; });
+player.addEventListener('click', (event) => {
+  // Only dismiss when the press also began outside the dialog.
+  const dismiss = backdropPressed && isPlayerBackdrop(event);
+  backdropPressed = false;
+  if (dismiss) player.close();
+});
 player.addEventListener('cancel', (event) => { if (document.fullscreenElement) { event.preventDefault(); document.exitFullscreen().catch(() => {}); } });
 player.addEventListener('close', () => { cleanup(); history.replaceState(null, '', '#collection'); $(opener)?.focus({ preventScroll: true }); });
 $('fullscreen-pause').addEventListener('click', () => { if (active) setRunning(!active.running); });
