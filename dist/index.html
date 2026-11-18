@@ -7,8 +7,28 @@
   <meta name="theme-color" content="#f6f5f0">
   <title>RP / PH Webデモ</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css">
-  <script type="module" src="./app.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=20261118">
+  <script type="importmap">
+    {
+      "imports": {
+        "./i18n.js": "./i18n.js?v=20261118",
+        "./demos/registry.js": "./demos/registry.js?v=20261118",
+        "./demos/perpetual-square.js": "./demos/perpetual-square.js?v=20261118",
+        "./demos/alternating-directions.js": "./demos/alternating-directions.js?v=20261118",
+        "./demos/automatic-motion.js": "./demos/automatic-motion.js?v=20261118",
+        "./demos/fan-wind.js": "./demos/fan-wind.js?v=20261118",
+        "./demos/bending-bar.js": "./demos/bending-bar.js?v=20261118",
+        "./demos/lifting-weight.js": "./demos/lifting-weight.js?v=20261118",
+        "./demos/pulling-square.js": "./demos/pulling-square.js?v=20261118",
+        "./demos/tile-ripple.js": "./demos/tile-ripple.js?v=20261118",
+        "./demos/donut-compliance.js": "./demos/donut-compliance.js?v=20261118",
+        "./demos/donut-tiles.js": "./demos/donut-tiles.js?v=20261118",
+        "./demos/donut-tile-gestures.js": "./demos/donut-tile-gestures.js?v=20261118",
+        "./demos/input-sandbox.js": "./demos/input-sandbox.js?v=20261118"
+      }
+    }
+  </script>
+  <script type="module" src="./app.js?v=20261118"></script>
 </head>
 <body>
   <a class="skip-link" href="#collection" data-i18n="collection.skip">デモ一覧へスキップ</a>
@@ -19,7 +39,7 @@
 
   <main class="wrap">
     <section id="collection" class="collection" aria-labelledby="collection-title">
-      <div class="section-head"><h1 id="collection-title"><span data-i18n="collection.title">デモ一覧</span><span class="section-count">4件</span></h1></div>
+      <div class="section-head"><h1 id="collection-title"><span data-i18n="collection.title">デモ一覧</span><span class="section-count">9件</span></h1></div>
       <div class="demo-grid" id="demo-grid"></div>
     </section>
   </main>
