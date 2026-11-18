@@ -17,11 +17,15 @@ export function barLuminances(cycles, targetX, elementX, invertAmount) {
   // Unityの基準回転−90°ではローカルTopが画面右。対象が左なら180°回転する。
   // 既存デモの方向名に置き換えて、この配置と共通の4状態系列を再現する。
   const values = squareLuminances(cycles, targetX < elementX ? 'right' : 'left', 1);
-  return {
-    center: values.center,
-    left: values.left + (values.right - values.left) * invertAmount,
-    right: values.right + (values.left - values.right) * invertAmount,
-  };
+  const [left, right] = blendBarEdges(values.left, values.right, invertAmount);
+  return { center: values.center, left, right };
+}
+
+export function blendBarEdges(first, second, invertAmount) {
+  return [
+    first + (second - first) * invertAmount,
+    second + (first - second) * invertAmount,
+  ];
 }
 
 export const bendingBar = {

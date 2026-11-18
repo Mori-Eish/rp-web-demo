@@ -114,6 +114,37 @@ dialog{border:1px solid #ccd3c6;padding:0;max-width:1120px;width:calc(100% - 64p
   background: linear-gradient(to bottom, #808080 63%, #50564d 63%);
 }
 
+.thumb-pulling {
+  background: #808080;
+}
+
+.thumb-pulling > span {
+  position: relative;
+  width: 70%;
+  max-width: 170px;
+  height: 90px;
+  background: linear-gradient(transparent 42%, #b8b9a8 42% 44%, #50564d 44% 48%, transparent 48% 90%, #b8b9a8 90% 92%, #50564d 92%);
+}
+
+.thumb-pulling > span::before,
+.thumb-pulling > span::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  width: 24px;
+  height: 24px;
+  top: 14px;
+  background: #f6f5ef;
+  border-left: 2px solid #151a16;
+  box-shadow: 22px 8px 0 -11px #dfcf9e, 34px 8px 0 -11px #dfcf9e;
+}
+
+.thumb-pulling > span::after {
+  top: 57px;
+  border-left-color: #f6f5ef;
+  border-right: 2px solid #151a16;
+}
+
 .thumb-lifting > span {
   width: 18px;
   aspect-ratio: 1;
@@ -134,4 +165,64 @@ dialog{border:1px solid #ccd3c6;padding:0;max-width:1120px;width:calc(100% - 64p
   left: 12px;
   color: #f1f1e9;
   text-align: center;
+}
+
+.thumb-tiles {
+  background: #383838;
+}
+
+.thumb-tiles > span {
+  width: min(68%, 150px);
+  aspect-ratio: 1;
+  background:
+    repeating-linear-gradient(90deg, #383838 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(0deg, #383838 0 1px, transparent 1px 7px),
+    radial-gradient(circle, #6e6e6e 24%, #d0d0d0 38%, #828282 47%, #6e6e6e 60%);
+}
+
+.thumb-donut {
+  background: #808080;
+}
+
+.bar-stage[data-running=true] canvas.donut-control {
+  cursor: ns-resize;
+}
+
+.bar-stage[data-running=true] canvas.donut-tiles-control {
+  cursor: crosshair;
+}
+
+.donut-tiles-action {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: 26px;
+  padding: 4px 9px;
+  border-radius: 3px;
+  background: #f6f5ee;
+  color: #273528;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+
+.donut-tiles-action[hidden] {
+  display: none;
+}
+
+.thumb-donut-tiles {
+  background: #737373;
+}
+
+.thumb-donut-tiles > span {
+  width: min(72%, 142px);
+  aspect-ratio: 1;
+  background: radial-gradient(circle closest-side, transparent 46%, #cdcdcd 52% 77%, transparent 84%) 0 0 / 20% 20%;
+}
+
+.thumb-donut > span {
+  width: min(68%, 126px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side, transparent 59%, #f8f8f5 60% 97%, #343434 98% 100%, transparent 101%);
 }

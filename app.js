@@ -9,9 +9,10 @@ let active = null, opener = null, messageKey = null, failed = false;
 
 function thumbnail(kind, index) {
   const el = document.createElement('div');
-  el.className = `thumbnail ${kind === 'lifting' ? 'thumb-lifting' : kind === 'directions' ? 'thumb-directions' : kind === 'bar' ? 'thumb-bar' : kind === 'wind' ? 'thumb-wind' : kind === 'rp' ? 'thumb-rp' : kind === 'input' ? 'thumb-input' : 'thumb-placeholder' + (index % 2 === 0 ? ' soft' : '')}`;
+  const hasSingleShape = ['donut', 'tiles', 'donut-tiles', 'pulling'].includes(kind);
+  el.className = `thumbnail ${hasSingleShape ? `thumb-${kind}` : kind === 'lifting' ? 'thumb-lifting' : kind === 'directions' ? 'thumb-directions' : kind === 'bar' ? 'thumb-bar' : kind === 'wind' ? 'thumb-wind' : kind === 'rp' ? 'thumb-rp' : kind === 'input' ? 'thumb-input' : 'thumb-placeholder' + (index % 2 === 0 ? ' soft' : '')}`;
   el.setAttribute('aria-hidden', 'true');
-  el.innerHTML = kind === 'lifting' ? '<span></span><span></span><span></span>' : kind === 'directions' ? '<span class="directions-thumb"><span>→</span><span>←</span><span>→</span><span>←</span></span>' : kind === 'bar' ? '<span class="bar-thumb"></span><span class="bar-thumb-pointer"></span>' : kind === 'wind' ? '<span class="wind-thumb-zone zone-down">✣<span>↓</span></span><span class="wind-thumb-zone zone-up"><span>↑</span>✣</span><span class="wind-thumb-cursor"></span>' : kind === 'rp' ? '<span class="rp-thumb-field"><span></span></span><span class="rp-thumb-arrow">↑</span>' : kind === 'input' ? '<span class="thumb-square"></span><span class="thumb-pointer"></span>' : '<span class="placeholder-shape">+</span>';
+  el.innerHTML = hasSingleShape ? '<span></span>' : kind === 'lifting' ? '<span></span><span></span><span></span>' : kind === 'directions' ? '<span class="directions-thumb"><span>→</span><span>←</span><span>→</span><span>←</span></span>' : kind === 'bar' ? '<span class="bar-thumb"></span><span class="bar-thumb-pointer"></span>' : kind === 'wind' ? '<span class="wind-thumb-zone zone-down">✣<span>↓</span></span><span class="wind-thumb-zone zone-up"><span>↑</span>✣</span><span class="wind-thumb-cursor"></span>' : kind === 'rp' ? '<span class="rp-thumb-field"><span></span></span><span class="rp-thumb-arrow">↑</span>' : kind === 'input' ? '<span class="thumb-square"></span><span class="thumb-pointer"></span>' : '<span class="placeholder-shape">+</span>';
   return el;
 }
 function card(demo, index) {
@@ -183,7 +184,7 @@ function openDemo(id, trigger) {
   const values = settingsFor(localizeDemo(demo));
   if (!player.open) player.showModal();
   try {
-    const instance = demo.create({ canvas, overlay: $('demo-overlay'), start: () => setRunning(true), invalidate: render, setHint: (text) => { if (active?.running) $('stage-help').textContent = text; }, setStageLabel: (text) => { $('stage-label').textContent = text; } });
+    const instance = demo.create({ canvas, overlay: $('demo-overlay'), start: () => setRunning(true), invalidate: render, setHint: (text) => { if (active?.running) $('stage-help').textContent = text; }, setStageLabel: (text) => { $('stage-label').textContent = text; }, setNote: (text) => { $('player-note').textContent = text; } });
     const events = new AbortController(), observer = new ResizeObserver(resize);
     active = { instance, events, observer, values, demo, running: false, started: false, elapsed: 0, lastTime: null, raf: 0 };
     resize(); instance.setSettings({ ...values }); observer.observe(stage);
