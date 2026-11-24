@@ -1,43 +1,80 @@
 import { t } from '../i18n.js';
 import { squareLuminances } from './perpetual-square.js';
 
-const turnDuration = 1;
+const turnDuration = 2.2;
+const strideLength = .96;
+const stanceFraction = .62;
+const ease = (progress) => progress * progress * (3 - 2 * progress);
 const gray = (value) => {
   const byte = Math.round(value * 255);
   return `rgb(${byte},${byte},${byte})`;
 };
 
-function drawPerson(ctx, x, ground, size, facing, gait) {
+function walkingFoot(phase) {
+  const swing = Math.max(0, (phase - stanceFraction) / (1 - stanceFraction));
+  const lift = .16 * Math.sin(swing * Math.PI) ** 2;
+  // 体の移動分を打ち消して、接地中の足を地面の同じ位置に置く。
+  return { x: strideLength * (stanceFraction / 2 - phase + ease(swing)), y: -.028 - lift, lift };
+}
+
+function walkingPose(walk, side, turningAmount) {
+  const phase = ((walk / strideLength) % 1 + 1) % 1;
+  const bob = -.024 * Math.cos(4 * Math.PI * (phase - stanceFraction / 2));
+  return {
+    hipX: -.035 * side,
+    hipY: -.64 + bob,
+    shoulderX: (.14 - .08 * turningAmount) * side,
+    shoulderY: -.99 + bob,
+    handX: -.42 * side,
+    handY: -.78 - .25 * turningAmount + bob * .65,
+    feet: [walkingFoot(phase), walkingFoot((phase + .5) % 1)],
+  };
+}
+
+function drawLeg(ctx, hipX, hipY, foot, heading) {
+  const dx = foot.x - hipX, dy = foot.y - hipY;
+  const length = Math.hypot(dx, dy);
+  const bend = Math.sqrt(Math.max(0, .36 ** 2 - (length / 2) ** 2)) * heading;
+  ctx.moveTo(hipX, hipY);
+  ctx.lineTo((hipX + foot.x) / 2 + bend * dy / length, (hipY + foot.y) / 2 - bend * dx / length);
+  ctx.lineTo(foot.x, foot.y);
+  ctx.lineTo(foot.x + .11 * heading, foot.y + foot.lift * .3);
+}
+
+function drawPerson(ctx, x, ground, size, side, turningAmount, pose) {
+  const { hipX, hipY, shoulderX, shoulderY, handX, handY, feet } = pose;
+  const headX = shoulderX + .045 * side;
+  const headY = shoulderY - .255;
   ctx.save();
   ctx.translate(x, ground);
-  ctx.scale(size * facing, size);
-  ctx.strokeStyle = '#282e29';
+  ctx.scale(size, size);
   ctx.lineWidth = .047;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
+
+  ctx.strokeStyle = '#444b42';
+  ctx.beginPath();
+  drawLeg(ctx, hipX, hipY, feet[0], -side);
+  ctx.moveTo(shoulderX, shoulderY + .03);
+  ctx.lineTo(-.15 * side, shoulderY + .31 - .14 * turningAmount);
+  ctx.lineTo(handX, handY);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#282e29';
+  ctx.beginPath();
+  drawLeg(ctx, hipX, hipY, feet[1], -side);
+  ctx.moveTo(headX, headY + .14);
+  ctx.lineTo(shoulderX, shoulderY);
+  ctx.lineTo(hipX, hipY);
+  ctx.moveTo(shoulderX, shoulderY);
+  ctx.lineTo(-.07 * side, shoulderY + .22 - .14 * turningAmount);
+  ctx.lineTo(handX, handY);
+  ctx.stroke();
+
   ctx.fillStyle = '#deddd3';
   ctx.beginPath();
-  ctx.arc(.2, -1.28, .14, 0, Math.PI * 2);
+  ctx.arc(headX, headY, .14, 0, Math.PI * 2);
   ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  // 後ろの紐を握り、体を進行方向へ傾けて後ずさりする姿勢。
-  ctx.moveTo(.17, -1.12);
-  ctx.lineTo(-.04, -.58);
-  ctx.moveTo(.12, -.99);
-  ctx.lineTo(-.08, -.79);
-  ctx.lineTo(-.4, -.78);
-  ctx.moveTo(.06, -.9);
-  ctx.lineTo(-.13, -.68);
-  ctx.lineTo(-.4, -.78);
-  ctx.moveTo(-.04, -.58);
-  ctx.lineTo(.11 + gait * .08, -.3);
-  ctx.lineTo(.12 + gait * .28, -.035);
-  ctx.lineTo(.23 + gait * .28, -.035);
-  ctx.moveTo(-.04, -.58);
-  ctx.lineTo(-.17 - gait * .08, -.3);
-  ctx.lineTo(-.16 - gait * .28, -.035);
-  ctx.lineTo(-.05 - gait * .28, -.035);
   ctx.stroke();
   ctx.restore();
 }
@@ -71,14 +108,16 @@ export const pullingSquare = {
       while (remaining > 0) {
         if (turnTime > 0) {
           const step = Math.min(remaining, turnTime);
+          const previousTurn = ease(1 - turnTime / turnDuration);
           turnTime -= step;
+          walk -= direction * 4 * (ease(1 - turnTime / turnDuration) - previousTurn);
           remaining -= step;
           if (turnTime === 0) direction *= -1;
         } else {
           const distance = (direction > 0 ? 1 - position : position) * span;
           const step = Math.min(remaining, distance / settings.autoSpeed);
           position = Math.max(0, Math.min(1, position + direction * settings.autoSpeed * step / span));
-          walk += settings.autoSpeed * step / Math.max(1, size);
+          walk += direction * settings.autoSpeed * step / size;
           remaining -= step;
           if (step >= distance / settings.autoSpeed) {
             position = direction > 0 ? 1 : 0;
@@ -110,14 +149,12 @@ export const pullingSquare = {
       render({ delta = 0 }) {
         advance(Math.max(0, delta));
         cycles = (cycles + Math.max(0, delta) * settings.frequency) % 1;
-        const turning = turnTime > 0;
-        const turn = turning ? 1 - turnTime / turnDuration : 0;
-        const eased = turn * turn * (3 - 2 * turn);
-        const side = direction * (1 - eased * 2);
-        const facing = turning && turn > .5 ? -direction : direction;
+        const turn = turnTime > 0 ? 1 - turnTime / turnDuration : 0;
+        const side = direction * (1 - 2 * ease(turn));
+        const turningAmount = Math.sin(turn * Math.PI) ** 2;
         const squareX = margin + position * span;
         const personX = squareX + side * size * 2;
-        const gait = turning ? Math.sin(turn * Math.PI * 6) : Math.sin(walk * Math.PI * 2);
+        const pose = walkingPose(walk, side, turningAmount);
         ctx.fillStyle = '#808080';
         ctx.fillRect(0, 0, width, height);
         const rowTop = 38, rowHeight = Math.max(1, (height - rowTop - 36) / 2);
@@ -136,6 +173,19 @@ export const pullingSquare = {
           ctx.fillStyle = '#232923';
           ctx.fillText(t(row === 0 ? 'pulling.same' : 'pulling.opposite'), 16, y + 16);
 
+          const anchorX = squareX + side * size / 2;
+          const anchorY = ground - size * (.55 + turningAmount * .45);
+          const handX = personX + pose.handX * size;
+          const handY = ground + pose.handY * size;
+          const sag = size * (.03 + turningAmount * .24);
+          ctx.beginPath();
+          ctx.moveTo(anchorX, anchorY);
+          ctx.quadraticCurveTo((anchorX + handX) / 2, (anchorY + handY) / 2 + sag, handX, handY);
+          ctx.strokeStyle = '#dfcf9e';
+          ctx.lineWidth = Math.max(1.5, size * .035);
+          ctx.stroke();
+          drawPerson(ctx, personX, ground, size, side, turningAmount, pose);
+
           const phase = squareLuminances(cycles, row === 0 ? movement : opposite, 1);
           const left = squareX - size / 2, top = ground - size;
           ctx.fillStyle = gray(phase.center);
@@ -146,17 +196,6 @@ export const pullingSquare = {
           ctx.fillStyle = gray(phase.right);
           ctx.fillRect(left + size - edge, top, edge, size);
 
-          const anchorX = squareX + side * size / 2;
-          const anchorY = ground - size * .55 - Math.sin(turn * Math.PI) * size * .45;
-          const handX = personX - facing * size * .4;
-          const handY = ground - size * .78;
-          ctx.beginPath();
-          ctx.moveTo(anchorX, anchorY);
-          ctx.quadraticCurveTo((anchorX + handX) / 2, Math.max(anchorY, handY) + (turning ? size * .25 : size * .025), handX, handY);
-          ctx.strokeStyle = '#dfcf9e';
-          ctx.lineWidth = Math.max(1.5, size * .035);
-          ctx.stroke();
-          drawPerson(ctx, personX, ground, size, facing, gait);
         }
 
         if (settings.guides) {
