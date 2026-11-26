@@ -118,6 +118,21 @@ dialog{border:1px solid #ccd3c6;padding:0;max-width:1120px;width:calc(100% - 64p
   background: #808080;
 }
 
+.pulling-hold {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  min-height: 44px;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+}
+
+.pulling-hold[hidden] { display: none; }
+.pulling-hold[data-holding=true] { background: #203429; }
+.stage:fullscreen .pulling-hold { bottom: 94px; }
+
 .thumb-pulling > span {
   position: relative;
   width: 70%;

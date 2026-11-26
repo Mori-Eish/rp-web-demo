@@ -56,6 +56,11 @@ export const messages = {
     'lifting.hint.sequential': 'A → B → C の順に持ち上げて放します',
     'lifting.hint.simultaneous': 'A・B・Cを同時に持ち上げて放します',
     'pulling.same': '同方向RP', 'pulling.opposite': '逆方向RP',
+    'setting.pullingMode': '操作モード', 'setting.pullingSpeed': '移動速度',
+    'pulling.mode.auto': '自動往復', 'pulling.mode.manual': '手動（押している間だけ）',
+    'pulling.hold': '押して進む',
+    'pulling.hint.auto': '上下の四角の動きを見比べる · 一時停止で止められます',
+    'pulling.hint.manual': 'ボタンを押している間だけ進む · 離すとその場で停止',
     'alternating.mode.alternating': '交互', 'alternating.mode.same': '同方向のみ', 'alternating.mode.opposite': '逆方向のみ',
     'alternating.manualHint': '左右に動かす · マウス / タッチでドラッグ / 左右の矢印キー',
   },
@@ -116,6 +121,11 @@ export const messages = {
     'lifting.hint.sequential': 'The crane lifts and releases A, B, and C in order',
     'lifting.hint.simultaneous': 'The cranes lift and release all three squares together',
     'pulling.same': 'Same-direction RP', 'pulling.opposite': 'Opposite-direction RP',
+    'setting.pullingMode': 'Movement mode', 'setting.pullingSpeed': 'Movement speed',
+    'pulling.mode.auto': 'Automatic', 'pulling.mode.manual': 'Manual (hold to move)',
+    'pulling.hold': 'Hold to move',
+    'pulling.hint.auto': 'Compare the two squares · Select Pause to stop',
+    'pulling.hint.manual': 'Hold the button to move · Release to stop in place',
     'alternating.mode.alternating': 'Alternating', 'alternating.mode.same': 'Same direction only', 'alternating.mode.opposite': 'Opposite direction only',
     'alternating.manualHint': 'Move left and right · Mouse / Touch and drag / Left and right arrow keys',
   },
@@ -125,9 +135,9 @@ const englishDemos = {
   'pulling-square': {
     title: 'Pull the squares', badge: 'Prototype',
     description: 'Compare two squares being pulled by stick figures in separate rows.',
-    note: 'The upper square shows RP in its direction of travel, and the lower square shows RP against it. Their speeds, blink cycles, and rope lengths match. At each end, the figures move to the other side and pull back.',
+    note: 'The upper square shows RP in its direction of travel, and the lower square shows RP against it. At each end, the figures move to the other side and pull back. In manual mode, hold the button to move the squares and play the RP cycle.',
     hint: 'Compare the two squares · Select Pause to stop',
-    canvasLabel: 'Two stacked rows each have a ground, a square, a rope, and a stick figure. Both squares move together, with same-direction RP above and opposite-direction RP below.',
+    canvasLabel: 'Two stacked rows compare same-direction RP above and opposite-direction RP below. The squares move in sync, either automatically or while you hold the button in manual mode.',
   },
   'donut-tiles': {
     title: 'Donut RP tiles', badge: 'Prototype',
@@ -205,6 +215,6 @@ export function localizeDemo(demo) {
   if (language === 'ja') return demo;
   return {
     ...demo, ...englishDemos[demo.id],
-    settings: demo.settings.map((setting) => ({ ...setting, label: messages.en[`setting.${setting.key}`] ?? setting.label })),
+    settings: demo.settings.map((setting) => ({ ...setting, label: messages.en[setting.labelKey ?? `setting.${setting.key}`] ?? setting.label })),
   };
 }
