@@ -2,6 +2,7 @@ import { t } from '../i18n.js';
 import { squareLuminances } from './perpetual-square.js';
 
 const turnDuration = 2.2;
+const pullingModes = ['auto', 'manual'];
 const strideLength = .96;
 const stanceFraction = .62;
 const ease = (progress) => progress * progress * (3 - 2 * progress);
@@ -83,25 +84,74 @@ export const pullingSquare = {
   id: 'pulling-square',
   title: '紐で四角を引っ張る',
   description: '棒人間が引っ張る2つの四角を、上下の段で比べます。',
-  note: '上段は移動と同方向、下段は逆方向のRPです。移動速度、点滅の周期、紐の長さは共通です。端まで来ると棒人間が反対側へ回り、逆向きに引っ張ります。',
+  note: '上段は移動と同方向、下段は逆方向のRPです。端まで来ると棒人間が反対側へ回り、逆向きに引っ張ります。手動モードでは「押して進む」を押している間だけ、移動とRPの点滅が進みます。',
   badge: '試作',
   stageClass: 'bar-stage',
   stageLabel: 'PULL AND COMPARE',
   hint: '上下の四角の動きを見比べる · 一時停止で止められます',
-  canvasLabel: '上下2段それぞれに地面、四角、紐、棒人間があります。上段は同方向RP、下段は逆方向RPで、同じ速さで自動往復します。',
+  canvasLabel: '上下2段それぞれに地面、四角、紐、棒人間があります。上段は同方向RP、下段は逆方向RPです。自動往復と、ボタンを押している間だけ進む手動モードがあります。',
   thumbnail: 'pulling',
   settings: [
-    { key: 'autoSpeed', label: '自動移動の速度', type: 'range', min: 20, max: 150, step: 10, default: 50, unit: ' px/s' },
+    { key: 'pullingMode', label: '操作モード', type: 'select', default: 'auto',
+      options: pullingModes.map(value => ({ value, labelKey: `pulling.mode.${value}` })) },
+    { key: 'autoSpeed', label: '移動速度', labelKey: 'setting.pullingSpeed', type: 'range', min: 20, max: 150, step: 10, default: 50, unit: ' px/s' },
     { key: 'frequency', label: '周波数', type: 'range', min: .1, max: 4, step: .1, default: 2, unit: ' Hz' },
     { key: 'edgePercent', label: 'エッジ幅', type: 'range', min: .5, max: 20, step: .5, default: 2.5, unit: ' %' },
     { key: 'guides', label: 'ガイドを表示', type: 'checkbox', default: false },
   ],
-  create({ canvas }) {
+  create({ canvas, overlay, start, setHint }) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is unavailable');
     const settings = Object.fromEntries(pullingSquare.settings.map(({ key, default: value }) => [key, value]));
     let width = 1, height = 1, size = 1, margin = 0, span = 0;
     let position = 0, direction = 1, turnTime = 0, walk = 0, cycles = 0;
+    let heldBy = null, fullscreen = false;
+    const holdButton = overlay ? document.createElement('button') : null;
+
+    function release() {
+      heldBy = null;
+      if (holdButton) holdButton.dataset.holding = 'false';
+    }
+
+    function hold(input) {
+      if (settings.pullingMode !== 'manual' || heldBy !== null) return false;
+      heldBy = input;
+      holdButton.dataset.holding = 'true';
+      start?.();
+      return true;
+    }
+
+    function localize() {
+      const manual = settings.pullingMode === 'manual';
+      if (holdButton) {
+        holdButton.hidden = !manual;
+        holdButton.textContent = t('pulling.hold');
+      }
+      setHint?.(t(manual ? 'pulling.hint.manual' : 'pulling.hint.auto'));
+    }
+
+    if (holdButton) {
+      holdButton.type = 'button';
+      holdButton.className = 'button button-dark pulling-hold';
+      holdButton.addEventListener('pointerdown', event => {
+        if (event.button === 0 && hold(event.pointerId)) holdButton.setPointerCapture(event.pointerId);
+      });
+      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+        holdButton.addEventListener(type, event => { if (heldBy === event.pointerId) release(); });
+      }
+      for (const type of ['keydown', 'keyup']) {
+        holdButton.addEventListener(type, event => {
+          if (event.key !== ' ' && event.key !== 'Enter') return;
+          event.preventDefault();
+          if (type === 'keydown' && !event.repeat) hold(event.key);
+          if (type === 'keyup' && heldBy === event.key) release();
+        });
+      }
+      holdButton.addEventListener('blur', release);
+      holdButton.addEventListener('contextmenu', event => event.preventDefault());
+      overlay.append(holdButton);
+    }
+    localize();
 
     function advance(delta) {
       let remaining = delta;
@@ -134,21 +184,33 @@ export const pullingSquare = {
         size = Math.min(60, width * .12, height * .12);
         margin = size * 2.65 + 12;
         span = Math.max(1, width - margin * 2);
+        fullscreen = canvas.parentElement?.matches(':fullscreen');
       },
+      localize,
       setSettings(values) {
         for (const { key, type, min, max } of pullingSquare.settings) {
           if (type === 'checkbox') {
             if (typeof values[key] === 'boolean') settings[key] = values[key];
+          } else if (type === 'select') {
+            if (pullingModes.includes(values[key]) && settings[key] !== values[key]) {
+              release();
+              settings[key] = values[key];
+              localize();
+            }
           } else if (Number.isFinite(values[key])) settings[key] = Math.max(min, Math.min(max, values[key]));
         }
       },
+      suspend: release,
       reset() {
+        release();
         position = turnTime = walk = cycles = 0;
         direction = 1;
       },
       render({ delta = 0 }) {
-        advance(Math.max(0, delta));
-        cycles = (cycles + Math.max(0, delta) * settings.frequency) % 1;
+        const manual = settings.pullingMode === 'manual';
+        const step = !manual || heldBy !== null ? Math.max(0, delta) : 0;
+        advance(step);
+        cycles = (cycles + step * settings.frequency) % 1;
         const turn = turnTime > 0 ? 1 - turnTime / turnDuration : 0;
         const side = direction * (1 - 2 * ease(turn));
         const turningAmount = Math.sin(turn * Math.PI) ** 2;
@@ -157,7 +219,8 @@ export const pullingSquare = {
         const pose = walkingPose(walk, side, turningAmount);
         ctx.fillStyle = '#808080';
         ctx.fillRect(0, 0, width, height);
-        const rowTop = 38, rowHeight = Math.max(1, (height - rowTop - 36) / 2);
+        const footer = manual ? (fullscreen ? 144 : 88) : 36;
+        const rowTop = 38, rowHeight = Math.max(1, (height - rowTop - footer) / 2);
         ctx.font = `${Math.max(10, Math.min(12, width / 36))}px system-ui, sans-serif`;
         ctx.textAlign = 'left';
         const movement = direction > 0 ? 'right' : 'left';
@@ -195,7 +258,6 @@ export const pullingSquare = {
           ctx.fillRect(left, top, edge, size);
           ctx.fillStyle = gray(phase.right);
           ctx.fillRect(left + size - edge, top, edge, size);
-
         }
 
         if (settings.guides) {
@@ -223,6 +285,7 @@ export const pullingSquare = {
           ctx.restore();
         }
       },
+      dispose() { holdButton?.remove(); },
     };
   },
 };
