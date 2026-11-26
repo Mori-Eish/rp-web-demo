@@ -1,4 +1,4 @@
-export const gestureModes = ['zipper', 'paint', 'spring', 'deflect'];
+export const gestureModes = ['zipper', 'paint', 'spring'];
 
 const fullTurn = Math.PI * 2;
 const zipperDuration = .48;
@@ -11,7 +11,6 @@ export function createDonutTileGestures(size) {
   const teeth = Array.from({ length: size }, () => ({ closed: false, start: -Infinity }));
   const painted = new Float32Array(size * size).fill(NaN);
   let mode, hasPaint = false, winding = 0, unwind = null, keyboardRelease = Infinity;
-  let blocker = null, blockerUntil = Infinity;
 
   function clearPaint() {
     painted.fill(NaN);
@@ -22,8 +21,8 @@ export function createDonutTileGestures(size) {
     for (const tooth of teeth) { tooth.closed = false; tooth.start = -Infinity; }
     clearPaint();
     winding = 0;
-    unwind = blocker = null;
-    keyboardRelease = blockerUntil = Infinity;
+    unwind = null;
+    keyboardRelease = Infinity;
   }
 
   function zip(from, to, elapsed) {
@@ -69,11 +68,6 @@ export function createDonutTileGestures(size) {
   }
 
   function move(from, to, elapsed) {
-    if (mode === 'deflect') {
-      blocker = to;
-      blockerUntil = Infinity;
-      return;
-    }
     if (!from) return;
     const handle = mode === 'zipper' ? zip : mode === 'paint' ? paint : wind;
     const dx = to.x - from.x, dy = to.y - from.y;
@@ -86,30 +80,13 @@ export function createDonutTileGestures(size) {
     }
   }
 
-  function flow(x, y) {
-    if (!blocker) return Math.abs(y - middle) < 2 ? { gain: 1, angle: 0 } : null;
-    const dx = x - blocker.x, dy = y - blocker.y;
-    const distanceSquared = dx * dx + dy * dy;
-    const obstacleRadiusSquared = 2.4 ** 2;
-    if (distanceSquared <= obstacleRadiusSquared) return null;
-
-    // 円柱を回り込む流線と接線方向を求める。タイルの座標は変更しない。
-    const ratio = obstacleRadiusSquared / distanceSquared;
-    const streamline = blocker.y + dy * (1 - ratio);
-    if (Math.abs(streamline - middle) >= 2) return null;
-    const horizontal = 1 + ratio * (dy * dy - dx * dx) / distanceSquared;
-    const vertical = -2 * ratio * dx * dy / distanceSquared;
-    return { gain: 1, angle: Math.atan2(vertical, horizontal) };
-  }
-
   return {
     select(next) { mode = next; reset(); },
     clearPaint,
     get animating() {
       if (mode === 'zipper') return teeth.some(({ start }) => start !== -Infinity);
       if (mode === 'paint') return hasPaint;
-      if (mode === 'spring') return Math.abs(winding) >= minWinding || unwind !== null;
-      return mode === 'deflect';
+      return mode === 'spring' && (Math.abs(winding) >= minWinding || unwind !== null);
     },
     begin() {
       if (mode !== 'spring') return;
@@ -119,7 +96,6 @@ export function createDonutTileGestures(size) {
     },
     move,
     end(elapsed, cancelled = false) {
-      if (mode === 'deflect') blocker = null;
       if (mode !== 'spring') return;
       if (cancelled) {
         winding = 0;
@@ -134,7 +110,6 @@ export function createDonutTileGestures(size) {
         keyboardRelease = elapsed + .5;
       } else {
         move(from, to, elapsed);
-        if (mode === 'deflect') blockerUntil = elapsed + 1.2;
       }
     },
     expire(elapsed) {
@@ -143,7 +118,6 @@ export function createDonutTileGestures(size) {
       }
       if (elapsed >= keyboardRelease) releaseSpring(elapsed);
       if (unwind && elapsed >= unwind.until) unwind = null;
-      if (elapsed >= blockerUntil) blocker = null;
     },
     tile(col, row, elapsed) {
       const x = col + .5, y = row + .5;
@@ -167,7 +141,7 @@ export function createDonutTileGestures(size) {
         return { gain: 1, angle: Math.atan2(y - middle, x - middle) + direction * Math.PI / 2 };
       }
 
-      return mode === 'deflect' ? flow(x, y) : null;
+      return null;
     },
     guide(ctx, left, top, cell) {
       if (mode !== 'spring') return;
