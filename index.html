@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Reversed Phi (RP) を用いた Pseudo-Haptics (PH) のブラウザデモ。">
-  <meta name="theme-color" content="#f6f5f0">
+  <meta name="theme-color" content="#f7f6f0">
   <title>RP / PH Webデモ</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=20261126">
+  <link rel="stylesheet" href="./styles.css?v=20261127">
   <script type="importmap">
     {
       "imports": {
-        "./i18n.js": "./i18n.js?v=20261126-2",
+        "./i18n.js": "./i18n.js?v=20261127",
         "./demos/registry.js": "./demos/registry.js?v=20261118",
         "./demos/perpetual-square.js": "./demos/perpetual-square.js?v=20261118",
         "./demos/alternating-directions.js": "./demos/alternating-directions.js?v=20261118",
@@ -28,30 +28,68 @@
       }
     }
   </script>
-  <script type="module" src="./app.js?v=20261118"></script>
+  <script type="module" src="./app.js?v=20261127"></script>
 </head>
 <body>
   <a class="skip-link" href="#collection" data-i18n="collection.skip">デモ一覧へスキップ</a>
-  <header class="site-header wrap">
-    <a class="site-title" href="./" aria-label="RP / PH Webデモ ホーム" data-i18n="site.title" data-i18n-aria-label="site.home">RP / PH Webデモ</a>
-    <button type="button" class="language-toggle" data-language-toggle lang="en" aria-label="Switch to English">English</button>
+  <header class="site-masthead">
+    <div class="site-header wrap">
+      <a class="site-title" href="./" aria-label="RP / PH Webデモ ホーム" data-i18n-aria-label="site.home">
+        <span class="site-mark" aria-hidden="true"></span><span>RP / PH</span>
+      </a>
+      <div class="site-links">
+        <a href="#related" data-i18n="related.title">関連リンク</a>
+        <button type="button" class="language-toggle" data-language-toggle lang="en" aria-label="Switch to English">English</button>
+      </div>
+    </div>
   </header>
 
   <main class="wrap">
-    <section id="collection" class="collection" aria-labelledby="collection-title">
-      <div class="section-head"><h1 id="collection-title"><span data-i18n="collection.title">デモ一覧</span><span class="section-count">9件</span></h1></div>
+    <div class="site-intro">
+      <h1 data-i18n="site.title">RP / PH Webデモ</h1>
+      <p data-i18n="site.description">Reversed Phi (RP) を用いた Pseudo-Haptics (PH) のブラウザデモ。</p>
+    </div>
+    <section id="collection" class="collection" aria-labelledby="collection-title" tabindex="-1">
+      <div class="section-head"><h2 id="collection-title" data-i18n="collection.title">デモ一覧</h2><span class="section-count"></span></div>
       <div class="demo-grid" id="demo-grid"></div>
+    </section>
+    <section id="related" class="related" aria-labelledby="related-title" tabindex="-1">
+      <h2 id="related-title" data-i18n="related.title">関連リンク</h2>
+      <div class="related-grid">
+        <div>
+          <h3>Reversed Phi (RP)</h3>
+          <ul>
+            <li><a href="https://michaelbach.de/ot/mot-reversePhi/">Reverse Phi Illusion</a><p data-i18n="related.reversePhi">Michael Bach によるRPの解説と体験デモ。</p></li>
+            <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8825246/">The Perpetual Diamond</a><p data-i18n="related.diamond">輪郭の明暗を切り替え、固定された図形に見かけの運動を生じさせる研究。</p></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Pseudo-Haptics (PH)</h3>
+          <ul>
+            <li><a href="https://interstices.info/app/uploads/jalios/docs/application/pdf/images-tactiles.pdf">Feeling Bumps and Holes without a Haptic Interface</a><p data-i18n="related.bumps">カーソルの動きを変え、凹凸の感覚を提示する研究（PDF）。</p></li>
+            <li><a href="https://keita-lab.jp/projects/VisualHaptics/">VisualHaptics</a><p data-i18n="related.visualHaptics">渡邊恵太研究室による、カーソルで手触りを提示するプロジェクト。</p></li>
+          </ul>
+        </div>
+      </div>
     </section>
   </main>
 
   <dialog id="player" aria-labelledby="player-title">
     <div class="player-shell">
-      <header class="player-header"><div><span class="eyebrow"><span data-i18n="player.demo">デモ</span> / <span id="player-number">01</span></span><h2 id="player-title"></h2></div><div class="player-actions"><button type="button" class="language-toggle" data-language-toggle lang="en" aria-label="Switch to English">English</button><button class="icon-button" id="close-player" aria-label="デモを閉じる" data-i18n-aria-label="player.close">✕</button></div></header>
+      <header class="player-header">
+        <div><h2 id="player-title"></h2><p id="player-description"></p></div>
+        <div class="player-actions"><button type="button" class="language-toggle" data-language-toggle lang="en" aria-label="Switch to English">English</button><button class="icon-button" id="close-player" aria-label="デモを閉じる" data-i18n-aria-label="player.close">✕</button></div>
+      </header>
       <div class="player-body">
         <div class="stage-column"><div id="stage" class="stage"><div class="stage-topline"><span id="stage-status" role="status">待機中</span><span id="stage-label"></span></div><canvas id="demo-canvas" tabindex="0" aria-label="デモの操作領域"></canvas><div id="demo-overlay" class="demo-overlay"></div><div class="stage-help" id="stage-help"></div><div class="fullscreen-controls"><button type="button" class="button button-quiet" data-language-toggle lang="en" aria-label="Switch to English">English</button><button class="button button-quiet" id="fullscreen-pause">一時停止</button><button class="button button-quiet" id="fullscreen-exit" data-i18n="player.exitFullscreen">全画面を終了</button></div></div>
           <div class="transport"><button class="button button-dark" id="toggle-play">開始する <span aria-hidden="true">↗</span></button><button class="button button-quiet" id="reset-demo" data-i18n="player.reset">リセット</button><button class="button button-quiet fullscreen-button" id="fullscreen">全画面 <span aria-hidden="true">⛶</span></button></div>
         </div>
-        <aside class="controls" aria-label="デモの説明と設定" data-i18n-aria-label="player.controls"><span class="pill" id="player-badge"></span><p id="player-description"></p><div class="control-divider"></div><p class="eyebrow" id="settings-heading" data-i18n="player.settings">設定</p><div id="settings"></div><div class="player-note"><strong data-i18n="player.about">このデモについて</strong><p id="player-note"></p></div><p id="player-message" class="player-message" role="status" aria-live="polite"></p></aside>
+        <aside class="controls" aria-label="デモの説明と設定" data-i18n-aria-label="player.controls">
+          <h3 class="settings-heading" id="settings-heading" data-i18n="player.settings">設定</h3>
+          <div class="settings-list" id="settings"></div>
+          <details class="player-note" id="player-about"><summary data-i18n="player.about">このデモについて</summary><p id="player-note"></p></details>
+          <p id="player-message" class="player-message" role="status" aria-live="polite"></p>
+        </aside>
       </div>
       <footer class="player-footer"><span data-i18n="player.input">マウス・タッチ・キーボード対応</span><span data-i18n="player.escape">Esc で閉じる</span></footer>
     </div>

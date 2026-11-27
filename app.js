@@ -25,13 +25,14 @@ function card(demo, index) {
   const meta = document.createElement('div'); meta.className = 'card-meta';
   const status = document.createElement('span'); status.className = 'pill' + (demo ? '' : ' muted-pill'); status.textContent = demo ? demo.badge || t('player.demo') : t('collection.upcoming');
   meta.append(status);
-  const title = document.createElement('h2'); title.textContent = demo?.title || t('collection.next');
+  const title = document.createElement('h3'); title.textContent = demo?.title || t('collection.next');
   const description = document.createElement('p'); description.textContent = demo?.description || t('collection.placeholder');
   body.append(meta, title, description); el.append(body);
   const bottom = document.createElement('div'); bottom.className = 'card-bottom';
-  const label = document.createElement('span'); label.textContent = demo ? t('collection.open') : t('collection.tbd');
+  const label = document.createElement('span');
+  label.textContent = demo ? '↗' : t('collection.tbd');
+  if (demo) { label.className = 'card-action'; label.setAttribute('aria-hidden', 'true'); }
   bottom.append(label);
-  if (demo) { const arrow = document.createElement('span'); arrow.className = 'card-action'; arrow.textContent = '↗'; arrow.setAttribute('aria-hidden', 'true'); bottom.append(arrow); }
   el.append(bottom); return el;
 }
 function refreshGallery() {
@@ -44,7 +45,6 @@ function applyDemoText(demo) {
   const copy = localizeDemo(demo);
   $('player-title').textContent = copy.title;
   $('player-description').textContent = copy.description; $('player-note').textContent = copy.note;
-  $('player-badge').textContent = copy.badge || t('player.demo');
   canvas.setAttribute('aria-label', copy.canvasLabel || t('player.canvas', { title: copy.title }));
 }
 function updateTransport() {
@@ -107,59 +107,110 @@ function setRunning(running) {
   else { active.instance.suspend?.(); render(); }
   updateTransport();
 }
+const automaticOptions = [
+  { value: true, labelKey: 'setting.automatic' },
+  { value: false, labelKey: 'setting.manual' },
+];
+
+function segmentedSetting(id, title, options, selected, change) {
+  const group = document.createElement('fieldset'); group.className = 'setting setting-segmented';
+  const legend = document.createElement('legend'); legend.textContent = title;
+  const choices = document.createElement('div'); choices.className = 'segmented-options';
+  choices.style.setProperty('--option-count', options.length);
+  for (const { value, labelKey } of options) {
+    const label = document.createElement('label');
+    const radio = document.createElement('input'); radio.type = 'radio'; radio.name = id;
+    radio.value = value; radio.checked = value === selected;
+    radio.addEventListener('change', () => { if (radio.checked) change(value); });
+    const text = document.createElement('span'); text.textContent = t(labelKey);
+    label.append(radio, text); choices.append(label);
+  }
+  group.append(legend, choices);
+  return group;
+}
+
+function switchSetting(title, checked, change) {
+  const label = document.createElement('label'); label.className = 'setting setting-switch';
+  const name = document.createElement('span'); name.textContent = title;
+  const control = document.createElement('span'); control.className = 'switch-control';
+  const input = document.createElement('input'); input.type = 'checkbox'; input.checked = checked;
+  input.setAttribute('role', 'switch');
+  const track = document.createElement('span'); track.className = 'switch-track'; track.setAttribute('aria-hidden', 'true');
+  const state = document.createElement('span'); state.className = 'switch-state'; state.setAttribute('aria-hidden', 'true');
+  state.textContent = checked ? 'ON' : 'OFF';
+  input.addEventListener('change', () => {
+    state.textContent = input.checked ? 'ON' : 'OFF';
+    change(input.checked);
+  });
+  control.append(input, track, state); label.append(name, control);
+  return label;
+}
+
+function selectSetting(title, options, selected, change) {
+  const label = document.createElement('label'); label.className = 'setting';
+  const name = document.createElement('span'); name.className = 'setting-label'; name.textContent = title;
+  const input = document.createElement('select');
+  for (const { value, labelKey } of options) input.add(new Option(t(labelKey), value));
+  input.value = selected;
+  input.addEventListener('change', () => change(input.value));
+  label.append(name, input);
+  return label;
+}
+
+function rangeSetting(id, setting, selected, change) {
+  const field = document.createElement('div'); field.className = 'setting setting-range';
+  const row = document.createElement('div'); row.className = 'setting-label';
+  const name = document.createElement('label'); name.htmlFor = id; name.textContent = setting.label;
+  const output = document.createElement('output'); output.htmlFor = id; output.setAttribute('aria-hidden', 'true');
+  const input = document.createElement('input'); input.type = 'range'; input.id = id;
+  input.min = setting.min; input.max = setting.max; input.step = setting.step; input.value = selected;
+  const track = document.createElement('div'); track.className = 'setting-track';
+  const marker = document.createElement('span'); marker.className = 'setting-default-marker'; marker.setAttribute('aria-hidden', 'true');
+  const ratio = (setting.default - setting.min) / (setting.max - setting.min);
+  marker.style.left = `calc(${ratio * 100}% + ${8 - 16 * ratio}px)`;
+  const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'setting-default-button';
+  const unit = setting.unit || '';
+  reset.textContent = t('setting.default', { value: setting.default, unit });
+  reset.setAttribute('aria-label', t('setting.reset', { label: setting.label }));
+
+  function showValue() {
+    const value = input.value + unit;
+    output.textContent = value;
+    input.setAttribute('aria-valuetext', value);
+  }
+  input.addEventListener('input', () => { showValue(); change(Number(input.value)); });
+  reset.addEventListener('click', () => {
+    input.value = setting.default;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  showValue();
+  row.append(name, output); track.append(input, marker); field.append(row, track, reset);
+  return field;
+}
+
 function settingsFor(demo, initialValues = {}) {
   const values = {}, container = $('settings'); container.replaceChildren();
+  const ranges = document.createDocumentFragment();
   for (const setting of demo.settings) {
-    values[setting.key] = initialValues[setting.key] ?? setting.default;
-    const isSelect = setting.type === 'select';
-    const label = document.createElement(setting.type === 'range' ? 'div' : 'label'); label.className = 'setting';
-    const input = document.createElement(isSelect ? 'select' : 'input');
-    if (!isSelect) input.type = setting.type;
-    input.name = setting.key;
-    if (setting.type === 'checkbox') {
-      label.classList.add('check-setting'); input.checked = values[setting.key];
-      label.append(input, document.createTextNode(setting.label));
-    } else if (isSelect) {
-      const name = document.createElement('span'); name.className = 'setting-label'; name.textContent = setting.label;
-      for (const { value, labelKey } of setting.options) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = t(labelKey);
-        input.append(option);
-      }
-      input.value = values[setting.key];
-      label.append(name, input);
-    } else {
-      const row = document.createElement('span'); row.className = 'setting-label';
-      const name = document.createElement('label'); name.textContent = setting.label;
-      const output = document.createElement('output'); output.textContent = values[setting.key] + (setting.unit || '');
-      input.id = `setting-${demo.id}-${setting.key}`; output.htmlFor = input.id;
-      name.htmlFor = input.id;
-      input.setAttribute('aria-label', setting.label);
-      input.min = setting.min; input.max = setting.max; input.step = setting.step; input.value = values[setting.key];
-      const track = document.createElement('div'); track.className = 'setting-track';
-      const marker = document.createElement('span'); marker.className = 'setting-default-marker'; marker.setAttribute('aria-hidden', 'true');
-      const ratio = (setting.default - setting.min) / (setting.max - setting.min);
-      marker.style.left = `calc(${ratio * 100}% + ${8 - 16 * ratio}px)`;
-      track.append(input, marker);
-      const reset = document.createElement('button'); reset.type = 'button'; reset.className = 'setting-default-button';
-      reset.textContent = t('setting.default', { value: setting.default, unit: setting.unit || '' });
-      reset.setAttribute('aria-label', t('setting.reset', { label: setting.label }));
-      reset.addEventListener('click', () => {
-        input.value = setting.default;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-      });
-      row.append(name, output); label.append(row, track, reset);
-      input.addEventListener('input', () => { output.textContent = input.value + (setting.unit || ''); });
-    }
-    input.addEventListener(isSelect ? 'change' : 'input', () => {
-      if (setting.type === 'checkbox') values[setting.key] = input.checked;
-      else if (isSelect) values[setting.key] = input.value;
-      else values[setting.key] = Number(input.value);
+    const { key, label, type, options } = setting;
+    const value = initialValues[key] ?? setting.default;
+    values[key] = value;
+    const id = `setting-${demo.id}-${key}`;
+    const change = next => {
+      values[key] = next;
       if (active) { active.instance.setSettings({ ...values }); render(); }
-    });
-    container.append(label);
+    };
+    if (type === 'range') {
+      ranges.append(rangeSetting(id, setting, value, change));
+    } else if (type === 'select') {
+      container.append(options.length <= 3 ? segmentedSetting(id, label, options, value, change) : selectSetting(label, options, value, change));
+    } else if (key === 'autoMove' || key === 'autoScan') {
+      container.append(segmentedSetting(id, t('setting.operationMode'), automaticOptions, value, change));
+    } else {
+      container.append(switchSetting(label, value, change));
+    }
   }
+  container.append(ranges);
   return values;
 }
 function cleanup() {
@@ -173,7 +224,7 @@ function openDemo(id, trigger) {
   if (!demo) return;
   cleanup(); opener = trigger?.id || `card-${demo.id}`; failed = false; messageKey = null;
   applyDemoText(demo);
-  $('player-number').textContent = String(demos.indexOf(demo) + 1).padStart(2, '0');
+  $('player-about').open = false;
   $('player-message').textContent = ''; $('stage-label').textContent = demo.stageLabel || demo.kind;
   stage.classList.toggle('rp-stage', demo.id === 'perpetual-square');
   stage.classList.toggle('wind-stage', demo.stageClass === 'wind-stage');
